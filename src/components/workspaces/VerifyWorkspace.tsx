@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import {
-  Check,
   Eye,
   EyeOff,
   FileKey2,
@@ -11,32 +10,70 @@ import {
   Wifi,
 } from "lucide-react";
 import { IconButton, StatusPill } from "../common";
+import { verifyToken, type VerificationResult } from "../../services/jwt";
+import { useAppStore } from "../../store";
 
 export function VerifyWorkspace({ notify }: { notify: (message: string) => void }) {
+  const token = useAppStore((state) => state.token);
   const [mode, setMode] = useState<"secret" | "public" | "jwks" | "oidc">(
-    "jwks",
+    "secret",
   );
-  const [value, setValue] = useState(
-    "https://auth.example.com/.well-known/jwks.json",
-  );
+  const [value, setValue] = useState("");
   const [revealSecret, setRevealSecret] = useState(false);
   const [running, setRunning] = useState(false);
-  const [complete, setComplete] = useState(false);
-  const run = () => {
+  const [result, setResult] = useState<VerificationResult | null>(null);
+  const [error, setError] = useState("");
+
+  const run = async () => {
+    if (mode !== "secret") {
+      notify("Only HS256 secret verification is connected right now");
+      return;
+    }
+
+    if (!token.trim()) {
+      notify("Paste and inspect a JWT first");
+      return;
+    }
+
+    if (!value.trim()) {
+      notify("Enter the HMAC secret");
+      return;
+    }
+
     setRunning(true);
-    setComplete(false);
-    window.setTimeout(() => {
+    setResult(null);
+    setError("");
+
+    try {
+      const verification = await verifyToken({ token, secret: value });
+      setResult(verification);
+      notify(verification.message);
+    } catch (caught) {
+      const message =
+        typeof caught === "object" &&
+        caught !== null &&
+        "message" in caught &&
+        typeof caught.message === "string"
+          ? caught.message
+          : "Verification failed";
+      setError(message);
+      notify(message);
+    } finally {
       setRunning(false);
-      setComplete(true);
-      notify("Verification complete");
-    }, 650);
+    }
   };
+
   const titles = {
     secret: "HMAC secret",
     public: "Public key",
     jwks: "JWKS URL",
     oidc: "OIDC issuer",
   };
+  const statusLabel = result
+    ? result.status === "verified"
+      ? "VERIFIED"
+      : "FAILED"
+    : "UNVERIFIED";
   const pipeline =
     mode === "oidc"
       ? ["Issuer", "Discovery", "Metadata", "JWKS", "Key", "Verify"]
@@ -54,7 +91,7 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
             JWKS or OIDC discovery.
           </p>
         </div>
-        <StatusPill state={complete ? "VERIFIED" : "UNVERIFIED"} />
+        <StatusPill state={statusLabel} />
       </div>
       <div className="segmented-control">
         {(["secret", "public", "jwks", "oidc"] as const).map((item) => (
@@ -63,7 +100,8 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
             className={mode === item ? "active" : ""}
             onClick={() => {
               setMode(item);
-              setComplete(false);
+              setResult(null);
+              setError("");
               setValue(
                 item === "jwks"
                   ? "https://auth.example.com/.well-known/jwks.json"
@@ -143,7 +181,7 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
           </div>
           <button
             className="primary-button verify-action"
-            disabled={!value || running}
+            disabled={!value || running || !token || mode !== "secret"}
             onClick={run}
           >
             <ShieldCheck />
@@ -153,7 +191,7 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
         <section className="panel pipeline-panel">
           <div className="section-heading">
             <span>Verification trace</span>
-            <span>{complete ? "Completed in 184 ms" : "Ready"}</span>
+            <span>{result ? result.algorithm : error ? "Error" : "Ready"}</span>
           </div>
           <div className={`pipeline ${running ? "running" : ""}`}>
             {pipeline.map((step, index) => (
@@ -166,31 +204,37 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
                 <div>
                   <strong>{step}</strong>
                   <small>
-                    {complete
-                      ? step === "JWKS"
-                        ? "3 keys fetched"
-                        : step === "Key match" || step === "Key"
-                          ? "kid auth-key-2026"
-                          : "Resolved"
-                      : "Pending"}
+                    {result
+                      ? step === "Token"
+                        ? "Loaded from Inspect"
+                        : step === "Key material"
+                          ? "Secret provided"
+                          : step === "Algorithm"
+                            ? result.algorithm
+                            : result.message
+                      : error || "Pending"}
                   </small>
                 </div>
-                {complete && <Check />}
+                {result && <ShieldCheck />}
               </div>
             ))}
           </div>
-          {complete && (
-            <div className="verification-result">
+          {result && (
+            <div
+              className={`verification-result ${
+                result.status === "failed" ? "verification-result-failed" : ""
+              }`}
+            >
               <ShieldCheck />
               <div>
-                <strong>Signature verified</strong>
-                <span>RS256 · auth-key-2026 · key use: sig</span>
+                <strong>{result.message}</strong>
+                <span>{result.algorithm} · local HMAC verification</span>
               </div>
             </div>
           )}
+          {error && <div className="form-hint">{error}</div>}
         </section>
       </div>
     </div>
   );
 }
-

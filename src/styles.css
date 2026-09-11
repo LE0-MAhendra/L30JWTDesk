@@ -186,7 +186,7 @@ main { min-width: 0; min-height: 0; overflow: hidden; }
 .status { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font: 10px 'Geist Mono Variable'; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
 .status-active .status-dot, .status-verified .status-dot, .status-pass .status-dot, .status-passed .status-dot { background: var(--success); }
-.status-fail .status-dot, .status-invalid .status-dot, .status-expired .status-dot, .status-modified .status-dot { background: var(--danger); }
+.status-fail .status-dot, .status-failed .status-dot, .status-invalid .status-dot, .status-expired .status-dot, .status-modified .status-dot { background: var(--danger); }
 .status-warning .status-dot, .status-not-active .status-dot { background: var(--warning); }
 .status-high .status-dot { background: var(--danger); }
 .status-added .status-dot { background: var(--success); }
@@ -253,6 +253,7 @@ main { min-width: 0; min-height: 0; overflow: hidden; }
 .pipeline.running .pipeline-row { animation: pipeline-pulse .35s var(--delay) both; }
 @keyframes pipeline-pulse { 0% { opacity: .35; } 50% { opacity: 1; color: var(--accent); } 100% { opacity: .6; } }
 .verification-result { margin: 4px 16px 16px; padding: 11px; display: flex; gap: 9px; border: 1px solid var(--success); border-radius: 6px; background: var(--success-soft); color: var(--success); }
+.verification-result-failed { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
 .verification-result div { display: grid; }
 .verification-result strong { font-size: 12px; }
 .verification-result span { color: var(--text-secondary); font: 10px 'Geist Mono Variable'; }

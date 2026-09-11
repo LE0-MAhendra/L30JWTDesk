@@ -61,6 +61,19 @@ export interface AppError {
   message: string;
 }
 
+export type VerificationStatus = "verified" | "failed";
+
+export interface VerificationRequest {
+  token: string;
+  secret: string;
+}
+
+export interface VerificationResult {
+  status: VerificationStatus;
+  algorithm: string;
+  message: string;
+}
+
 export async function inspectToken(
   token: string
 ): Promise<JwtInspectionResult> {
@@ -70,4 +83,10 @@ export async function inspectToken(
       token,
     }
   );
+}
+
+export async function verifyToken(
+  request: VerificationRequest
+): Promise<VerificationResult> {
+  return await invoke<VerificationResult>("verify_token", { request });
 }
