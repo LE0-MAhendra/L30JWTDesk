@@ -1,0 +1,25 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "L30JWTDesk",
+  "version": "0.1.0",
+  "identifier": "dev.l30.jwt-desk",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1421",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{
+      "title": "L30JWTDesk",
+      "width": 1440,
+      "height": 900,
+      "minWidth": 1100,
+      "minHeight": 700,
+      "decorations": false,
+      "resizable": true
+    }],
+    "security": { "csp": null }
+  },
+  "bundle": { "active": true, "targets": "all", "icon": [] }
+}
