@@ -25,8 +25,8 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
   const [error, setError] = useState("");
 
   const run = async () => {
-    if (mode !== "secret") {
-      notify("Only HS256 secret verification is connected right now");
+    if (mode === "jwks" || mode === "oidc") {
+      notify("JWKS and OIDC are not connected yet");
       return;
     }
 
@@ -36,7 +36,7 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
     }
 
     if (!value.trim()) {
-      notify("Enter the HMAC secret");
+      notify(mode === "secret" ? "Enter the HMAC secret" : "Paste the RSA public key");
       return;
     }
 
@@ -176,12 +176,12 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
             {mode === "secret"
               ? "Secret values remain in memory and are never logged or persisted."
               : mode === "public"
-                ? "PEM public keys and X.509 certificates are supported by the backend integration point."
+                ? "Paste an RSA public key PEM for RS256, RS384, or RS512."
                 : "The requested endpoint will be visible in the verification trace."}
           </div>
           <button
             className="primary-button verify-action"
-            disabled={!value || running || !token || mode !== "secret"}
+            disabled={!value || running || !token || mode === "jwks" || mode === "oidc"}
             onClick={run}
           >
             <ShieldCheck />
@@ -208,7 +208,9 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
                       ? step === "Token"
                         ? "Loaded from Inspect"
                         : step === "Key material"
-                          ? "Secret provided"
+                          ? mode === "secret"
+                            ? "Secret provided"
+                            : "Public key provided"
                           : step === "Algorithm"
                             ? result.algorithm
                             : result.message
@@ -228,7 +230,10 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
               <ShieldCheck />
               <div>
                 <strong>{result.message}</strong>
-                <span>{result.algorithm} · local HMAC verification</span>
+                <span>
+                  {result.algorithm} · local{" "}
+                  {result.algorithm.startsWith("HS") ? "HMAC" : "RSA"} verification
+                </span>
               </div>
             </div>
           )}
