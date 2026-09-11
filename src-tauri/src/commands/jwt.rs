@@ -5,7 +5,9 @@ use serde_json::Value;
 
 use crate::{
     error::AppError,
-    models::jwt::{ClaimsAnalysis, JwtInspectionResult, JwtParts, TokenMetadata, TokenStatus},
+    models::jwt::{
+        ClaimsAnalysis, JwtInspectionResult, JwtParts, TokenMetadata, TokenStatus, TokenTimeline,
+    },
 };
 
 // This function is responsible for cleaning the user input.
@@ -21,13 +23,17 @@ fn normalize_token(input: &str) -> Result<String, AppError> {
     }
     if value.to_ascii_lowercase().starts_with("authorization:") {
         value = value
-            .split_one(':')
+            .split_once(':')
             .map(|(_, token)| token.trim()) // here we are headers=beaerer,token . so we remove the initialbefore, and use only token.
             .ok_or_else(|| AppError::new("INVALID_AUTH_TOKEN", "Invalid Authorization Token"))?;
     }
 
-    if value.len() >= 7 && value[..7].eq_ignore_ascii_case("bearer") {
-        value = value[7..].trim();
+    let mut bearer_parts = value.splitn(2, char::is_whitespace);
+    if bearer_parts
+        .next()
+        .is_some_and(|prefix| prefix.eq_ignore_ascii_case("bearer"))
+    {
+        value = bearer_parts.next().unwrap_or("").trim();
     }
 
     if value.is_empty() {
@@ -36,7 +42,7 @@ fn normalize_token(input: &str) -> Result<String, AppError> {
             "No JWT was found in the input",
         ));
     }
-    ok(value.to_string())
+    Ok(value.to_string())
 }
 
 // A signed JWT normally looks like:
@@ -282,4 +288,21 @@ pub fn inspect_token_internal(input: &str) -> Result<JwtInspectionResult, AppErr
 #[tauri::command]
 pub fn inspect_token(token: String) -> Result<JwtInspectionResult, AppError> {
     inspect_token_internal(&token)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::inspect_token_internal;
+
+    const TOKEN: &str = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyXzEyMyIsImV4cCI6MjAwMDAwMDAwMH0.fake-signature";
+
+    #[test]
+    fn accepts_bearer_token_input() {
+        assert!(inspect_token_internal(&format!("Bearer {TOKEN}")).is_ok());
+    }
+
+    #[test]
+    fn accepts_authorization_bearer_input() {
+        assert!(inspect_token_internal(&format!("Authorization: Bearer {TOKEN}")).is_ok());
+    }
 }
