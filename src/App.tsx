@@ -45,6 +45,15 @@ function App() {
     document.documentElement.dataset.theme = resolved;
   }, [theme]);
   useEffect(() => {
+    document.documentElement.dataset.density = (
+      localStorage.getItem("l30-density") ?? "Compact"
+    ).toLowerCase();
+    document.documentElement.classList.toggle(
+      "reduce-motion",
+      localStorage.getItem("l30-reduced") === "true",
+    );
+  }, []);
+  useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       const mod = event.metaKey || event.ctrlKey;
       if (mod && event.key.toLowerCase() === "k") {

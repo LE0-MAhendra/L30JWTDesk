@@ -11,30 +11,6 @@ export function SettingsWorkspace() {
   const [reduced, setReduced] = useState(
     localStorage.getItem("l30-reduced") === "true",
   );
-  const sections = [
-    {
-      title: "Behavior",
-      items: [
-        ["Clear sensitive data when leaving view", true],
-        ["Remember panel layout", true],
-        ["Clear data when app closes", false],
-      ],
-    },
-    {
-      title: "Security",
-      items: [
-        ["Redact diagnostics by default", true],
-        ["Auto-clear verification secrets", true],
-      ],
-    },
-    {
-      title: "Network",
-      items: [
-        ["Show every JWKS / OIDC request", true],
-        ["Allow redirects during discovery", false],
-      ],
-    },
-  ];
   return (
     <div className="workspace-scroll settings-page">
       <div className="workspace-heading">
@@ -112,23 +88,11 @@ export function SettingsWorkspace() {
           />
         </div>
       </section>
-      {sections.map((section) => (
-        <section className="settings-section" key={section.title}>
-          <h3>{section.title}</h3>
-          {section.items.map(([label, initial]) => (
-            <SettingToggle
-              key={String(label)}
-              label={String(label)}
-              initial={Boolean(initial)}
-            />
-          ))}
-        </section>
-      ))}
       <section className="settings-section shortcut-section">
         <h3>Keyboard</h3>
         {[
           ["Command palette", "⌘ K"],
-          ["Inspect token", "⌘ Enter"],
+          ["Inspect token", "⌘ ↵"],
           ["Clear current token", "⌘ L"],
           ["Copy diagnostic report", "⌘ ⇧ C"],
           ["Settings", "⌘ ,"],
@@ -159,24 +123,6 @@ function Toggle({
     >
       <span />
     </button>
-  );
-}
-
-function SettingToggle({
-  label,
-  initial,
-}: {
-  label: string;
-  initial: boolean;
-}) {
-  const [checked, setChecked] = useState(initial);
-  return (
-    <div className="settings-row">
-      <div>
-        <strong>{label}</strong>
-      </div>
-      <Toggle checked={checked} onChange={setChecked} />
-    </div>
   );
 }
 
