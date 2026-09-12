@@ -1,5 +1,6 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use num_bigint_dig::BigUint;
+use reqwest::Url;
 use rsa::RsaPublicKey;
 use serde_json::Value;
 use sha2::{Sha256, Sha384, Sha512};
@@ -25,6 +26,8 @@ pub async fn verify_token_with_jwks(
     if jwks_url.is_empty() {
         return Err(AppError::new("EMPTY_JWKS_URL", "JWKS URL cannot be empty"));
     }
+
+    validate_http_url(jwks_url, "JWKS URL")?;
 
     let parts = split_token(&token)?;
     let header_raw = decode_segment(&parts.header)?;
@@ -95,6 +98,24 @@ pub async fn verify_token_with_jwks(
     })
 }
 
+pub(super) fn validate_http_url(value: &str, label: &str) -> Result<(), AppError> {
+    let url = Url::parse(value).map_err(|_| {
+        AppError::new(
+            "INVALID_URL",
+            format!("{label} must be a valid http or https URL"),
+        )
+    })?;
+
+    if !matches!(url.scheme(), "http" | "https") {
+        return Err(AppError::new(
+            "INVALID_URL",
+            format!("{label} must use http or https"),
+        ));
+    }
+
+    Ok(())
+}
+
 fn rsa_public_key_from_jwk(jwk: &JwkKey) -> Result<RsaPublicKey, AppError> {
     let n_bytes = URL_SAFE_NO_PAD
         .decode(&jwk.n)
@@ -109,4 +130,21 @@ fn rsa_public_key_from_jwk(jwk: &JwkKey) -> Result<RsaPublicKey, AppError> {
         BigUint::from_bytes_be(&e_bytes),
     )
     .map_err(|_| AppError::new("INVALID_JWK", "Invalid RSA public key"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_http_url;
+
+    #[test]
+    fn accepts_http_urls() {
+        assert!(
+            validate_http_url("http://127.0.0.1:8787/.well-known/jwks.json", "JWKS URL").is_ok()
+        );
+    }
+
+    #[test]
+    fn rejects_non_http_urls() {
+        assert!(validate_http_url("file:///tmp/jwks.json", "JWKS URL").is_err());
+    }
 }
