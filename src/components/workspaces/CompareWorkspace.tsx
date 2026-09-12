@@ -24,6 +24,14 @@ export function CompareWorkspace({ notify }: { notify: (message: string) => void
   const [rows, setRows] = useState<TokenDiffRow[]>([]);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
+  const saved = (() => {
+    try {
+      const value = JSON.parse(localStorage.getItem("l30-saved-tokens") ?? "[]");
+      return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+    } catch {
+      return [];
+    }
+  })();
   useEffect(() => {
     if (selectedToken) setA(selectedToken);
   }, [selectedToken]);
@@ -95,6 +103,10 @@ export function CompareWorkspace({ notify }: { notify: (message: string) => void
             <span className="eyebrow">Token B</span>
             <span className="toolbar-meta">{tokenMeta(b)}</span>
           </div>
+          {saved.length > 0 && <select aria-label="Load saved token into Token B" onChange={(event) => event.target.value && setB(event.target.value)} defaultValue="">
+            <option value="">Load saved token…</option>
+            {saved.map((item) => { const [label, value] = item.split(":"); return <option key={item} value={value}>{label}</option>; })}
+          </select>}
           <CodeMirror value={b} onChange={setB} height="130px" theme="dark" />
         </section>
       </div>
