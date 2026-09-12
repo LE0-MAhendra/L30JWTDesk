@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.app.json && vite build",
     "preview": "vite preview",
+    "jwks:test": "node scripts/jwks-server.mjs",
     "tauri": "tauri"
   },
   "dependencies": {

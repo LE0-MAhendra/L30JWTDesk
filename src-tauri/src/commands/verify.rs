@@ -89,6 +89,21 @@ pub fn verify_token(request: VerificationRequest) -> Result<VerificationResult, 
     })
 }
 
+pub(super) fn verify_rsa_key<D>(
+    public_key: &RsaPublicKey,
+    signing_input: &[u8],
+    signature: &[u8],
+) -> Result<bool, AppError>
+where
+    D: sha2::Digest + rsa::pkcs8::AssociatedOid,
+{
+    let signature = pkcs1v15::Signature::try_from(signature)
+        .map_err(|_| AppError::new("INVALID_SIGNATURE", "Invalid RSA signature"))?;
+
+    Ok(pkcs1v15::VerifyingKey::<D>::new(public_key.clone())
+        .verify(signing_input, &signature)
+        .is_ok())
+}
 fn verify_rsa<D>(
     public_key_pem: &str,
     signing_input: &[u8],
@@ -101,12 +116,7 @@ where
         .or_else(|_| RsaPublicKey::from_pkcs1_pem(public_key_pem))
         .map_err(|_| AppError::new("INVALID_PUBLIC_KEY", "Invalid RSA public key PEM"))?;
 
-    let signature = pkcs1v15::Signature::try_from(signature)
-        .map_err(|_| AppError::new("INVALID_SIGNATURE", "Invalid RSA signature"))?;
-
-    Ok(pkcs1v15::VerifyingKey::<D>::new(public_key)
-        .verify(signing_input, &signature)
-        .is_ok())
+    verify_rsa_key::<D>(&public_key, signing_input, signature)
 }
 
 #[cfg(test)]

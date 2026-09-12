@@ -15,6 +15,8 @@ tauri = { version = "2", features = [] }
 hmac = "0.12"
 rsa = "0.9"
 sha2 = { version = "0.10", features = ["oid"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+num-bigint-dig = "0.8"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

@@ -68,6 +68,11 @@ export interface VerificationRequest {
   secret: string;
 }
 
+export interface JwksVerificationRequest {
+  token: string;
+  jwks_url: string;
+}
+
 export interface VerificationResult {
   status: VerificationStatus;
   algorithm: string;
@@ -89,4 +94,10 @@ export async function verifyToken(
   request: VerificationRequest
 ): Promise<VerificationResult> {
   return await invoke<VerificationResult>("verify_token", { request });
+}
+
+export async function verifyTokenWithJwks(
+  request: JwksVerificationRequest
+): Promise<VerificationResult> {
+  return await invoke<VerificationResult>("verify_token_with_jwks", { request });
 }

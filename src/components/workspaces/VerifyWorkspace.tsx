@@ -10,7 +10,11 @@ import {
   Wifi,
 } from "lucide-react";
 import { IconButton, StatusPill } from "../common";
-import { verifyToken, type VerificationResult } from "../../services/jwt";
+import {
+  verifyToken,
+  verifyTokenWithJwks,
+  type VerificationResult,
+} from "../../services/jwt";
 import { useAppStore } from "../../store";
 
 export function VerifyWorkspace({ notify }: { notify: (message: string) => void }) {
@@ -25,8 +29,8 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
   const [error, setError] = useState("");
 
   const run = async () => {
-    if (mode === "jwks" || mode === "oidc") {
-      notify("JWKS and OIDC are not connected yet");
+    if (mode === "oidc") {
+      notify("OIDC is not connected yet");
       return;
     }
 
@@ -45,7 +49,10 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
     setError("");
 
     try {
-      const verification = await verifyToken({ token, secret: value });
+      const verification =
+        mode === "jwks"
+          ? await verifyTokenWithJwks({ token, jwks_url: value })
+          : await verifyToken({ token, secret: value });
       setResult(verification);
       notify(verification.message);
     } catch (caught) {
@@ -181,7 +188,7 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
           </div>
           <button
             className="primary-button verify-action"
-            disabled={!value || running || !token || mode === "jwks" || mode === "oidc"}
+            disabled={!value || running || !token || mode === "oidc"}
             onClick={run}
           >
             <ShieldCheck />
@@ -207,6 +214,10 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
                     {result
                       ? step === "Token"
                         ? "Loaded from Inspect"
+                        : step === "JWKS"
+                          ? "JWKS fetched"
+                          : step === "Key match" || step === "Key"
+                            ? "kid matched"
                         : step === "Key material"
                           ? mode === "secret"
                             ? "Secret provided"
@@ -232,7 +243,11 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
                 <strong>{result.message}</strong>
                 <span>
                   {result.algorithm} · local{" "}
-                  {result.algorithm.startsWith("HS") ? "HMAC" : "RSA"} verification
+                  {mode === "jwks"
+                    ? "JWKS"
+                    : result.algorithm.startsWith("HS")
+                      ? "HMAC"
+                      : "RSA"} verification
                 </span>
               </div>
             </div>

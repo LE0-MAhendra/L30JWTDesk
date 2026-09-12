@@ -19,3 +19,22 @@ pub struct VerificationResult {
     pub algorithm: String,
     pub message: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct JwksVerificationRequest {
+    pub token: String,
+    pub jwks_url: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct JwksResponse {
+    pub keys: Vec<JwkKey>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct JwkKey {
+    pub kid: Option<String>,
+    pub kty: String,
+    pub n: String,
+    pub e: String,
+}
