@@ -6,5 +6,15 @@ export default defineConfig({
   clearScreen: false,
   server: { port: 1421, strictPort: true },
   envPrefix: ['VITE_', 'TAURI_'],
-  build: { target: 'safari13' },
+  build: {
+    target: 'safari13',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          codemirror: ['@uiw/react-codemirror', '@codemirror/lang-json', '@codemirror/view'],
+          ui: ['@radix-ui/react-tooltip', 'gsap', 'lucide-react', 'zustand'],
+        },
+      },
+    },
+  },
 });
