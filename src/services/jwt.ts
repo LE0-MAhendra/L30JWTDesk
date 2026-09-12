@@ -105,6 +105,13 @@ export interface ClaimValidationResult {
   steps: ClaimValidationStep[];
 }
 
+export type ReportMode = "summary" | "redacted" | "full";
+
+export interface DiagnosticReportRequest {
+  validation: ClaimValidationResult;
+  mode: ReportMode;
+}
+
 export interface SecurityFinding {
   id: string;
   severity: "critical" | "high" | "warning" | "info" | "passed";
@@ -172,4 +179,10 @@ export async function compareTokens(
   request: CompareTokensRequest
 ): Promise<TokenDiffRow[]> {
   return await invoke<TokenDiffRow[]>("compare_tokens", { request });
+}
+
+export async function generateDiagnosticReport(
+  request: DiagnosticReportRequest
+): Promise<string> {
+  return await invoke<string>("generate_diagnostic_report", { request });
 }

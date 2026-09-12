@@ -31,6 +31,20 @@ pub struct ClaimValidationResult {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReportMode {
+    Summary,
+    Redacted,
+    Full,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DiagnosticReportRequest {
+    pub validation: ClaimValidationResult,
+    pub mode: ReportMode,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SecurityAnalysisRequest {
     pub token: String,
 }

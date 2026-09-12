@@ -1,6 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Activity, Check, Clipboard, Copy, X, Zap } from "lucide-react";
-import { validateTokenClaims, type ClaimValidationResult, type ClaimValidationStep } from "../../services/jwt";
+import {
+  generateDiagnosticReport,
+  validateTokenClaims,
+  type ClaimValidationResult,
+  type ClaimValidationStep,
+  type ReportMode,
+} from "../../services/jwt";
 import { useAppStore } from "../../store";
 import { StatusPill, copyText, saveText } from "../common";
 
@@ -13,6 +19,7 @@ export function DebugWorkspace({ notify }: { notify: (message: string) => void }
   const [reportMode, setReportMode] = useState<"Summary" | "Redacted" | "Full">(
     "Redacted",
   );
+  const [report, setReport] = useState("Run validation to generate report.");
   const run = async () => {
     if (!token.trim()) {
       notify("Paste and inspect a JWT first");
@@ -43,12 +50,14 @@ export function DebugWorkspace({ notify }: { notify: (message: string) => void }
     }
   };
   const decision = result?.decision === "fail" ? "Reject" : result ? "Accept" : "Not run";
-  const report = `L30JWTDesk diagnostic report
-Decision: ${decision}
-Primary failure: ${result?.primary_failure ?? "None"}
-${result?.steps.map((step) => `${step.label}: ${step.state.toUpperCase()} - ${
-    reportMode === "Full" ? step.detail : step.detail.replace(/received .*/i, "received [redacted]")
-  }`).join("\n") ?? "Run validation to generate report."}`;
+  useEffect(() => {
+    if (!result) return;
+
+    generateDiagnosticReport({
+      validation: result,
+      mode: reportMode.toLowerCase() as ReportMode,
+    }).then(setReport);
+  }, [reportMode, result]);
   return (
     <div className="workspace-scroll workspace-pad">
       <div className="workspace-heading">
