@@ -9,6 +9,7 @@ const encode = (value: string) =>
     .replace(/\+/g, "-")
     .replace(/\//g, "_");
 const encodeBytes = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+const decodeJson = (segment: string) => JSON.parse(decodeURIComponent(escape(atob(segment.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - segment.length % 4) % 4)))));
 
 async function signHs(input: string, secret: string, algorithm: "HS256" | "HS384" | "HS512") {
   const key = await crypto.subtle.importKey(
@@ -75,6 +76,21 @@ export function CreateWorkspace({ notify }: { notify: (message: string) => void 
     notify("Token saved locally");
   };
   const useToken = () => { setToken(token); setWorkspace("inspect"); };
+  const loadSaved = (value: string) => {
+    try {
+      const [encodedHeader, encodedPayload] = value.split(".");
+      const nextHeader = decodeJson(encodedHeader);
+      setAlgorithm(nextHeader.alg);
+      setHeader(JSON.stringify(nextHeader, null, 2));
+      setPayload(JSON.stringify(decodeJson(encodedPayload), null, 2));
+      setCreatedToken(value);
+      setToken(value);
+      setError("");
+      notify("Saved token loaded for editing");
+    } catch {
+      notify("Saved token could not be decoded");
+    }
+  };
 
   return <div className="workspace-scroll workspace-pad">
     <div className="workspace-heading"><div><span className="eyebrow">Token lab</span><h2>Create a token</h2><p>Generate, save, and send a signed token into the existing workspaces.</p></div><button className="primary-button" onClick={generate} disabled={!canGenerate || (algorithm === "RS256" && !rsaKey)}>Generate {algorithm}</button></div>
@@ -82,6 +98,6 @@ export function CreateWorkspace({ notify }: { notify: (message: string) => void 
       <section className="panel"><div className="panel-toolbar"><span className="eyebrow">Token details</span></div><label className="field-label">Algorithm<select value={algorithm} onChange={(event) => { const next = event.target.value as typeof algorithm; setAlgorithm(next); setHeader(JSON.stringify({ alg: next, typ: "JWT", ...(next === "RS256" ? { kid } : {}) })); setCreatedToken(""); }}>{["HS256", "HS384", "HS512", "RS256"].map((item) => <option key={item}>{item}</option>)}</select></label><label className="field-label">Saved name<input value={name} onChange={(event) => setName(event.target.value)} /></label>{algorithm.startsWith("HS") ? <label className="field-label">HMAC secret<input value={secret} onChange={(event) => setSecret(event.target.value)} /></label> : <><label className="field-label">Key ID<input value={kid} onChange={(event) => setKid(event.target.value)} /></label><button className="secondary-button" onClick={async () => { const pair = await createRsaKey(); setRsaKey(pair.privateKey); setHeader(JSON.stringify({ alg: "RS256", typ: "JWT", kid })); setPublicKey(await exportPublicKey(pair.publicKey)); const jwk = await crypto.subtle.exportKey("jwk", pair.publicKey); setJwks(JSON.stringify({ keys: [{ ...jwk, kid, use: "sig", alg: "RS256" }] }, null, 2)); notify("RSA key pair and JWKS generated"); }}>Generate RSA key pair + JWKS</button></>}<label className="field-label">Header JSON<textarea value={header} onChange={(event) => setHeader(event.target.value)} /></label><label className="field-label">Payload JSON<textarea value={payload} onChange={(event) => setPayload(event.target.value)} /></label>{publicKey && <><label className="field-label">RSA public key<textarea className="token-output" value={publicKey} readOnly /></label><button className="secondary-button" onClick={() => copyText(publicKey, notify)}><Copy />Copy public key</button><label className="field-label">JWKS JSON<textarea className="token-output" value={jwks} readOnly /></label><button className="secondary-button" onClick={() => copyText(jwks, notify)}><Copy />Copy JWKS</button></>}{error && <div className="error-text">{error}</div>}</section>
       <section className="panel"><div className="panel-toolbar"><span className="eyebrow">Generated token</span><span className="toolbar-meta">{token ? "HS256" : "Waiting"}</span></div><textarea className="token-output" value={token} readOnly placeholder="Generate a token to preview it" />{token && <div className="button-row"><button className="secondary-button" onClick={() => copyText(token, notify)}><Copy />Copy</button><button className="secondary-button" onClick={save}><Save />Save</button><button className="secondary-button" onClick={useToken}><Send />Inspect</button></div>}</section>
     </div>
-    <section className="panel"><div className="panel-toolbar"><span className="eyebrow">Saved locally</span><span className="toolbar-meta">{saved.length} token{saved.length === 1 ? "" : "s"}</span></div>{saved.length ? saved.map((item) => { const [label, value] = item.split(":"); return <div className="diff-row" key={item}><code>{label}</code><span>{value.slice(0, 46)}…</span><button className="icon-button" onClick={() => { setCreatedToken(value); setToken(value); }}><Eye /></button><button className="icon-button" onClick={() => { const next = saved.filter((entry) => entry !== item); setSaved(next); localStorage.setItem("l30-saved-tokens", JSON.stringify(next)); notify("Saved token deleted"); }}><Trash2 /></button></div>; }) : <div className="empty-row">Saved tokens stay on this device.</div>}</section>
+    <section className="panel"><div className="panel-toolbar"><span className="eyebrow">Saved locally</span><span className="toolbar-meta">{saved.length} token{saved.length === 1 ? "" : "s"}</span></div>{saved.length ? saved.map((item) => { const [label, value] = item.split(":"); return <div className="diff-row" key={item}><code>{label}</code><span>{value.slice(0, 46)}…</span><button className="icon-button" onClick={() => loadSaved(value)}><Eye /></button><button className="icon-button" onClick={() => { const next = saved.filter((entry) => entry !== item); setSaved(next); localStorage.setItem("l30-saved-tokens", JSON.stringify(next)); notify("Saved token deleted"); }}><Trash2 /></button></div>; }) : <div className="empty-row">Saved tokens stay on this device.</div>}</section>
   </div>;
 }
