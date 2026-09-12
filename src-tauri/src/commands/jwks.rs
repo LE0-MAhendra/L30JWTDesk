@@ -1,9 +1,10 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use num_bigint_dig::BigUint;
-use reqwest::Url;
+use reqwest::{Client, Url};
 use rsa::RsaPublicKey;
 use serde_json::Value;
 use sha2::{Sha256, Sha384, Sha512};
+use std::time::Duration;
 
 use super::{
     helper::{decode_segment, normalize_token, parse_json, split_token},
@@ -50,7 +51,12 @@ pub async fn verify_token_with_jwks(
         ));
     }
 
-    let jwks: JwksResponse = reqwest::get(jwks_url)
+    let jwks: JwksResponse = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|_| AppError::new("JWKS_FETCH_FAILED", "Failed to create JWKS client"))?
+        .get(jwks_url)
+        .send()
         .await
         .map_err(|_| AppError::new("JWKS_FETCH_FAILED", "Failed to fetch JWKS"))?
         .json()

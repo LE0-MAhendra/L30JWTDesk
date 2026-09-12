@@ -1,4 +1,5 @@
-use reqwest::Url;
+use reqwest::{Client, Url};
+use std::time::Duration;
 
 use crate::{
     commands::jwks::{validate_http_url, verify_token_with_jwks},
@@ -24,7 +25,12 @@ pub async fn verify_token_with_oidc(
     validate_oidc_issuer_url(issuer_url)?;
 
     let discovery_url = format!("{issuer_url}/.well-known/openid-configuration");
-    let discovery: OidcDiscoveryResponse = reqwest::get(&discovery_url)
+    let discovery: OidcDiscoveryResponse = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|_| AppError::new("OIDC_DISCOVERY_FAILED", "Failed to create OIDC client"))?
+        .get(&discovery_url)
+        .send()
         .await
         .map_err(|_| AppError::new("OIDC_DISCOVERY_FAILED", "Failed to fetch OIDC discovery"))?
         .json()
