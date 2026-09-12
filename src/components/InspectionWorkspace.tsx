@@ -15,7 +15,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { mockInspection, SAMPLE_TOKEN } from "../services";
+import { SAMPLE_TOKEN } from "../services";
 import { inspectToken } from "../services/jwt";
 import { useAppStore } from "../store";
 import type { Claim, TokenInspection } from "../types";
@@ -530,6 +530,17 @@ export function InspectionWorkspace({
       notify("Token inspection failed");
     }
   };
+  const loadSample = async () => {
+    setToken(SAMPLE_TOKEN);
+    try {
+      const result = await inspectToken(SAMPLE_TOKEN);
+      setInspection(mapInspection(result));
+      notify("Sample token loaded");
+    } catch (error) {
+      console.error(error);
+      notify("Sample token inspection failed");
+    }
+  };
   const resize = (event: React.PointerEvent) => {
     const pane = paneRef.current;
     if (!pane) return;
@@ -565,10 +576,7 @@ export function InspectionWorkspace({
           </div>
           <button
             className="secondary-button"
-            onClick={() => {
-              setToken(SAMPLE_TOKEN);
-              setInspection(mockInspection());
-            }}
+            onClick={loadSample}
           >
             <Sparkles />
             Load sample

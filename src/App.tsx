@@ -17,7 +17,6 @@ import { SecurityWorkspace } from "./components/workspaces/SecurityWorkspace";
 import { SettingsWorkspace } from "./components/workspaces/SettingsWorkspace";
 import { VerifyWorkspace } from "./components/workspaces/VerifyWorkspace";
 import { useAppStore } from "./store";
-import { mockInspection } from "./services";
 
 function App() {
   const {
@@ -65,10 +64,6 @@ function App() {
         event.preventDefault();
         clearSensitive();
         notify("Sensitive data cleared");
-      }
-      if (mod && event.key === "Enter") {
-        const state = useAppStore.getState();
-        if (state.token.trim()) state.setInspection(mockInspection());
       }
     };
     window.addEventListener("keydown", handler);
