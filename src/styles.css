@@ -142,7 +142,7 @@ main { min-width: 0; min-height: 0; overflow: hidden; }
 .icon-button { width: 28px; height: 28px; border: 0; border-radius: 5px; background: transparent; color: var(--text-muted); display: grid; place-items: center; transition: background .14s, color .14s; }
 .icon-button:hover { background: var(--surface-3); color: var(--text-primary); }
 .field-label { display: grid; gap: 6px; margin: 14px 0; color: var(--text-muted); font-size: 12px; }
-.field-label input, .field-label textarea, .token-output { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text-primary); padding: 10px; font: inherit; }
+.field-label input, .field-label textarea, .field-label select, .token-output { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text-primary); padding: 10px; font: inherit; }
 .field-label textarea, .token-output { min-height: 76px; resize: vertical; font-family: var(--font-mono); font-size: 12px; }
 .token-output { min-height: 180px; margin-top: 14px; }
 .button-row { display: flex; gap: 8px; margin-top: 12px; }
