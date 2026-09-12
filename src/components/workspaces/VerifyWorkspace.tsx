@@ -36,7 +36,15 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
     }
 
     if (!value.trim()) {
-      notify(mode === "secret" ? "Enter the HMAC secret" : "Paste the RSA public key");
+      notify(
+        mode === "secret"
+          ? "Enter the HMAC secret"
+          : mode === "public"
+            ? "Paste the RSA public key"
+            : mode === "jwks"
+              ? "Enter the JWKS URL"
+              : "Enter the OIDC issuer URL",
+      );
       return;
     }
 
@@ -109,9 +117,9 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
               setError("");
               setValue(
                 item === "jwks"
-                  ? "https://auth.example.com/.well-known/jwks.json"
+                  ? "http://127.0.0.1:8787/.well-known/jwks.json"
                   : item === "oidc"
-                    ? "https://auth.example.com"
+                    ? "https://issuer.example.com"
                     : "",
               );
             }}
@@ -182,7 +190,9 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
               ? "Secret values remain in memory and are never logged or persisted."
               : mode === "public"
                 ? "Paste an RSA public key PEM for RS256, RS384, or RS512."
-                : "The requested endpoint will be visible in the verification trace."}
+                : mode === "jwks"
+                  ? "Use a JWKS endpoint, for example the local npm run jwks:test server."
+                  : "Use the issuer base URL; discovery appends /.well-known/openid-configuration."}
           </div>
           <button
             className="primary-button verify-action"
