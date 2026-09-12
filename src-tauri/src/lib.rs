@@ -2,6 +2,7 @@ mod commands;
 mod error;
 mod models;
 
+use commands::compare::compare_tokens;
 use commands::jwks::verify_token_with_jwks;
 use commands::jwt::inspect_token;
 use commands::oidc::verify_token_with_oidc;
@@ -12,6 +13,7 @@ pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             inspect_token,
+            compare_tokens,
             verify_token,
             verify_token_with_jwks,
             verify_token_with_oidc,

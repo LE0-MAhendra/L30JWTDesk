@@ -1,21 +1,37 @@
 import { useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
-import { Copy } from "lucide-react";
+import { Copy, GitCompare } from "lucide-react";
 import { SAMPLE_TOKEN } from "../../services";
+import { compareTokens, type TokenDiffRow } from "../../services/jwt";
 import { StatusPill, copyText } from "../common";
 
 export function CompareWorkspace({ notify }: { notify: (message: string) => void }) {
   const [a, setA] = useState(SAMPLE_TOKEN);
-  const [b, setB] = useState(
-    SAMPLE_TOKEN.replace("college-api", "college-web"),
-  );
+  const [b, setB] = useState(SAMPLE_TOKEN);
   const [filter, setFilter] = useState("Changed");
-  const rows = [
-    { key: "aud", status: "MODIFIED", a: "college-api", b: "college-web" },
-    { key: "roles", status: "MODIFIED", a: "admin, reviewer", b: "reviewer" },
-    { key: "azp", status: "ADDED", a: "—", b: "web-client" },
-    { key: "sub", status: "SAME", a: "user_2841", b: "user_2841" },
-  ];
+  const [rows, setRows] = useState<TokenDiffRow[]>([]);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState("");
+  const run = async () => {
+    setRunning(true);
+    setError("");
+    try {
+      setRows(await compareTokens({ token_a: a, token_b: b }));
+      notify("Token comparison complete");
+    } catch (caught) {
+      const message =
+        typeof caught === "object" &&
+        caught !== null &&
+        "message" in caught &&
+        typeof caught.message === "string"
+          ? caught.message
+          : "Token comparison failed";
+      setError(message);
+      notify(message);
+    } finally {
+      setRunning(false);
+    }
+  };
   const visible =
     filter === "All"
       ? rows
@@ -46,6 +62,10 @@ export function CompareWorkspace({ notify }: { notify: (message: string) => void
           <Copy />
           Copy diff
         </button>
+        <button className="primary-button" onClick={run} disabled={running}>
+          <GitCompare />
+          {running ? "Comparing…" : "Compare"}
+        </button>
       </div>
       <div className="compare-editors">
         <section className="panel">
@@ -67,7 +87,7 @@ export function CompareWorkspace({ notify }: { notify: (message: string) => void
         <div className="diff-toolbar">
           <div className="section-heading">
             <span>Claim diff</span>
-            <span>3 changes</span>
+            <span>{rows.filter((row) => row.status !== "SAME").length} changes</span>
           </div>
           <div className="filter-tabs">
             {["All", "Changed", "Added", "Removed", "Same"].map((item) => (
@@ -99,10 +119,11 @@ export function CompareWorkspace({ notify }: { notify: (message: string) => void
           </div>
         ))}
         {!visible.length && (
-          <div className="empty-row">No {filter.toLowerCase()} claims.</div>
+          <div className="empty-row">
+            {error || `No ${filter.toLowerCase()} claims.`}
+          </div>
         )}
       </section>
     </div>
   );
 }
-

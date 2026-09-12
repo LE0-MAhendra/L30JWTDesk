@@ -113,6 +113,18 @@ export interface SecurityFinding {
   recommendation: string;
 }
 
+export interface CompareTokensRequest {
+  token_a: string;
+  token_b: string;
+}
+
+export interface TokenDiffRow {
+  key: string;
+  status: "SAME" | "MODIFIED" | "ADDED" | "REMOVED";
+  a: string;
+  b: string;
+}
+
 export async function inspectToken(
   token: string
 ): Promise<JwtInspectionResult> {
@@ -154,4 +166,10 @@ export async function analyzeSecurityFindings(
   return await invoke<SecurityFinding[]>("analyze_security_findings", {
     request: { token },
   });
+}
+
+export async function compareTokens(
+  request: CompareTokensRequest
+): Promise<TokenDiffRow[]> {
+  return await invoke<TokenDiffRow[]>("compare_tokens", { request });
 }
