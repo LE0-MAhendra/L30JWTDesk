@@ -20,6 +20,22 @@ const jwk = {
 };
 
 const server = http.createServer((request, response) => {
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  if (request.url === "/.well-known/openid-configuration") {
+    response.writeHead(200, {
+      "access-control-allow-origin": "*",
+      "content-type": "application/json",
+    });
+    response.end(
+      JSON.stringify({
+        issuer: baseUrl,
+        jwks_uri: `${baseUrl}/.well-known/jwks.json`,
+      }),
+    );
+    return;
+  }
+
   if (request.url === "/.well-known/jwks.json") {
     response.writeHead(200, {
       "access-control-allow-origin": "*",
@@ -34,5 +50,6 @@ const server = http.createServer((request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`JWKS server: http://127.0.0.1:${port}/.well-known/jwks.json`);
+  console.log(`JWKS URL: http://127.0.0.1:${port}/.well-known/jwks.json`);
+  console.log(`OIDC issuer: http://127.0.0.1:${port}`);
 });

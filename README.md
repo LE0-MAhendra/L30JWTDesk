@@ -60,7 +60,7 @@ l30-jwt-desk
 
 ## Local JWKS test
 
-Start the local JWKS server:
+Start the local JWKS/OIDC server:
 
 ```bash
 npm run jwks:test
@@ -70,6 +70,12 @@ Use this JWKS URL in Verify:
 
 ```text
 http://127.0.0.1:8787/.well-known/jwks.json
+```
+
+Or use this OIDC issuer URL in Verify:
+
+```text
+http://127.0.0.1:8787
 ```
 
 Use this RS256 token:
