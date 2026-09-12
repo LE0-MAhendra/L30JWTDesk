@@ -2,8 +2,7 @@ use crate::{
     commands::jwks::verify_token_with_jwks,
     error::AppError,
     models::verification::{
-        JwksVerificationRequest, OidcDiscoveryResponse, OidcVerificationRequest,
-        VerificationResult,
+        JwksVerificationRequest, OidcDiscoveryResponse, OidcVerificationRequest, VerificationResult,
     },
 };
 

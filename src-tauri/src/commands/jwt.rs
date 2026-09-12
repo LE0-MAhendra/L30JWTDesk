@@ -4,9 +4,7 @@ use serde_json::Value;
 use super::helper::{decode_segment, normalize_token, parse_json, split_token};
 use crate::{
     error::AppError,
-    models::jwt::{
-        ClaimsAnalysis, JwtInspectionResult, TokenMetadata, TokenStatus, TokenTimeline,
-    },
+    models::jwt::{ClaimsAnalysis, JwtInspectionResult, TokenMetadata, TokenStatus, TokenTimeline},
 };
 
 // This is needed because aud may be either:
