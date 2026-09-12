@@ -20,7 +20,7 @@ export function CompareWorkspace({ notify }: { notify: (message: string) => void
   const selectedToken = useAppStore((state) => state.token);
   const [a, setA] = useState(selectedToken || SAMPLE_TOKEN);
   const [b, setB] = useState(SAMPLE_TOKEN);
-  const [filter, setFilter] = useState("Changed");
+  const [filter, setFilter] = useState("All");
   const [rows, setRows] = useState<TokenDiffRow[]>([]);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
