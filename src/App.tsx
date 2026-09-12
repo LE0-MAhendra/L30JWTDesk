@@ -12,6 +12,7 @@ import {
 import { DURATIONS, Logo, WindowControls, easing } from "./components/common";
 import { AboutWorkspace } from "./components/workspaces/AboutWorkspace";
 import { CompareWorkspace } from "./components/workspaces/CompareWorkspace";
+import { CreateWorkspace } from "./components/workspaces/CreateWorkspace";
 import { DebugWorkspace } from "./components/workspaces/DebugWorkspace";
 import { SecurityWorkspace } from "./components/workspaces/SecurityWorkspace";
 import { SettingsWorkspace } from "./components/workspaces/SettingsWorkspace";
@@ -65,7 +66,7 @@ function App() {
         event.preventDefault();
         setWorkspace("settings");
       }
-      if (mod && /^[1-5]$/.test(event.key)) {
+      if (mod && /^[1-6]$/.test(event.key)) {
         event.preventDefault();
         setWorkspace(navItems[Number(event.key) - 1].id);
       }
@@ -97,6 +98,7 @@ function App() {
 
   const workspaceContent = useMemo(() => {
     if (workspace === "inspect") return <InspectionWorkspace notify={notify} />;
+    if (workspace === "create") return <CreateWorkspace notify={notify} />;
     if (workspace === "verify") return <VerifyWorkspace notify={notify} />;
     if (workspace === "security") return <SecurityWorkspace />;
     if (workspace === "compare") return <CompareWorkspace notify={notify} />;

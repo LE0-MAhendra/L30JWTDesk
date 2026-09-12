@@ -9,6 +9,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Search,
+  PlusSquare,
   Settings,
   ShieldCheck,
   Sun,
@@ -26,6 +27,7 @@ export const navItems: Array<{
   shortcut?: string;
 }> = [
   { id: "inspect", label: "Inspect", icon: Search, shortcut: "⌘1" },
+  { id: "create", label: "Create", icon: PlusSquare, shortcut: "⌘6" },
   { id: "verify", label: "Verify", icon: ShieldCheck, shortcut: "⌘2" },
   { id: "security", label: "Security", icon: Fingerprint, shortcut: "⌘3" },
   { id: "compare", label: "Compare", icon: GitCompareArrows, shortcut: "⌘4" },
@@ -34,6 +36,7 @@ export const navItems: Array<{
 
 export const workspaceLabels: Record<Workspace, string> = {
   inspect: "Inspect",
+  create: "Create",
   verify: "Verify",
   security: "Security",
   compare: "Compare",
@@ -239,4 +242,3 @@ export function CommandPalette({
     </div>
   );
 }
-

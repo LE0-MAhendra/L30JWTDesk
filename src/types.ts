@@ -1,4 +1,4 @@
-export type Workspace = 'inspect' | 'verify' | 'security' | 'compare' | 'debug' | 'settings' | 'about';
+export type Workspace = 'inspect' | 'create' | 'verify' | 'security' | 'compare' | 'debug' | 'settings' | 'about';
 export type Theme = 'dark' | 'light' | 'system';
 
 export interface Claim {
