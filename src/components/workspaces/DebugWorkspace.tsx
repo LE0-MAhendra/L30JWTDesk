@@ -1,24 +1,54 @@
 import React, { useState } from "react";
 import { Activity, Check, Clipboard, Copy, X, Zap } from "lucide-react";
-import { validationSteps } from "../../services";
-import type { ValidationStep } from "../../types";
+import { validateTokenClaims, type ClaimValidationResult, type ClaimValidationStep } from "../../services/jwt";
+import { useAppStore } from "../../store";
 import { StatusPill, copyText, saveText } from "../common";
 
 export function DebugWorkspace({ notify }: { notify: (message: string) => void }) {
+  const token = useAppStore((state) => state.token);
   const [running, setRunning] = useState(false);
-  const [done, setDone] = useState(true);
+  const [result, setResult] = useState<ClaimValidationResult | null>(null);
+  const [expectedIssuer, setExpectedIssuer] = useState("");
+  const [expectedAudience, setExpectedAudience] = useState("");
   const [reportMode, setReportMode] = useState<"Summary" | "Redacted" | "Full">(
     "Redacted",
   );
-  const run = () => {
+  const run = async () => {
+    if (!token.trim()) {
+      notify("Paste and inspect a JWT first");
+      return;
+    }
+
     setRunning(true);
-    setDone(false);
-    window.setTimeout(() => {
+    try {
+      const validation = await validateTokenClaims({
+        token,
+        expected_issuer: expectedIssuer,
+        expected_audience: expectedAudience,
+        clock_skew_seconds: 60,
+      });
+      setResult(validation);
+      notify(validation.decision === "fail" ? "Validation failed" : "Validation passed");
+    } catch (caught) {
+      const message =
+        typeof caught === "object" &&
+        caught !== null &&
+        "message" in caught &&
+        typeof caught.message === "string"
+          ? caught.message
+          : "Validation failed";
+      notify(message);
+    } finally {
       setRunning(false);
-      setDone(true);
-    }, 620);
+    }
   };
-  const report = `L30JWTDesk diagnostic report\nDecision: REJECT\nPrimary failure: Audience mismatch\nExpected: college-api\nReceived: ${reportMode === "Full" ? "college-web" : "[redacted]"}\nSignature: PASS (RS256)\nTiming: PASS (23m remaining)`;
+  const decision = result?.decision === "fail" ? "Reject" : result ? "Accept" : "Not run";
+  const report = `L30JWTDesk diagnostic report
+Decision: ${decision}
+Primary failure: ${result?.primary_failure ?? "None"}
+${result?.steps.map((step) => `${step.label}: ${step.state.toUpperCase()} - ${
+    reportMode === "Full" ? step.detail : step.detail.replace(/received .*/i, "received [redacted]")
+  }`).join("\n") ?? "Run validation to generate report."}`;
   return (
     <div className="workspace-scroll workspace-pad">
       <div className="workspace-heading">
@@ -38,19 +68,27 @@ export function DebugWorkspace({ notify }: { notify: (message: string) => void }
         <section className="panel decision-panel">
           <span className="eyebrow">Authentication</span>
           <div className="reject">
-            <X />
-            Reject
+            {result?.decision === "fail" ? <X /> : <Check />}
+            {decision}
           </div>
           <span className="decision-label">Primary failure</span>
-          <h3>Audience mismatch</h3>
+          <h3>{result?.primary_failure ?? "None"}</h3>
           <div className="expected-grid">
             <div>
-              <span>Expected</span>
-              <code>college-api</code>
+              <span>Expected issuer</span>
+              <input
+                value={expectedIssuer}
+                onChange={(event) => setExpectedIssuer(event.target.value)}
+                placeholder="optional"
+              />
             </div>
             <div>
-              <span>Received</span>
-              <code>college-web</code>
+              <span>Expected audience</span>
+              <input
+                value={expectedAudience}
+                onChange={(event) => setExpectedAudience(event.target.value)}
+                placeholder="optional"
+              />
             </div>
           </div>
         </section>
@@ -59,16 +97,17 @@ export function DebugWorkspace({ notify }: { notify: (message: string) => void }
         >
           <div className="section-heading">
             <span>Validation pipeline</span>
-            <span>{done ? "1 failure" : "Evaluating…"}</span>
+            <span>{running ? "Evaluating…" : result?.primary_failure ?? "Ready"}</span>
           </div>
-          {validationSteps.map((step, index) => (
+          {(result?.steps ?? []).map((step, index) => (
             <ValidationRow
               step={step}
               key={step.label}
               delay={index * 65}
-              pending={!done}
+              pending={running}
             />
           ))}
+          {!result && !running && <div className="empty-row">Run validation to check exp, nbf, iss, and aud.</div>}
         </section>
       </div>
       <section className="panel report-panel">
@@ -117,7 +156,7 @@ function ValidationRow({
   delay,
   pending,
 }: {
-  step: ValidationStep;
+  step: ClaimValidationStep;
   delay: number;
   pending: boolean;
 }) {
@@ -137,4 +176,3 @@ function ValidationRow({
     </div>
   );
 }
-

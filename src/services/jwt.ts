@@ -84,6 +84,27 @@ export interface VerificationResult {
   message: string;
 }
 
+export type ClaimValidationState = "pass" | "warning" | "fail";
+
+export interface ClaimValidationRequest {
+  token: string;
+  expected_issuer?: string | null;
+  expected_audience?: string | null;
+  clock_skew_seconds?: number | null;
+}
+
+export interface ClaimValidationStep {
+  label: string;
+  state: ClaimValidationState;
+  detail: string;
+}
+
+export interface ClaimValidationResult {
+  decision: ClaimValidationState;
+  primary_failure?: string | null;
+  steps: ClaimValidationStep[];
+}
+
 export async function inspectToken(
   token: string
 ): Promise<JwtInspectionResult> {
@@ -111,4 +132,10 @@ export async function verifyTokenWithOidc(
   request: OidcVerificationRequest
 ): Promise<VerificationResult> {
   return await invoke<VerificationResult>("verify_token_with_oidc", { request });
+}
+
+export async function validateTokenClaims(
+  request: ClaimValidationRequest
+): Promise<ClaimValidationResult> {
+  return await invoke<ClaimValidationResult>("validate_token_claims", { request });
 }

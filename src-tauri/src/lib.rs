@@ -5,6 +5,7 @@ mod models;
 use commands::jwks::verify_token_with_jwks;
 use commands::jwt::inspect_token;
 use commands::oidc::verify_token_with_oidc;
+use commands::security::validate_token_claims;
 use commands::verify::verify_token;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -13,7 +14,8 @@ pub fn run() {
             inspect_token,
             verify_token,
             verify_token_with_jwks,
-            verify_token_with_oidc
+            verify_token_with_oidc,
+            validate_token_claims
         ])
         .run(tauri::generate_context!())
         .expect("error while running L30JWTDesk");
