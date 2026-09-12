@@ -7,8 +7,8 @@ import {
   ChevronRight,
   Fingerprint,
 } from "lucide-react";
-import { securityFindings } from "../../services";
-import type { SecurityFinding } from "../../types";
+import { analyzeSecurityFindings, type SecurityFinding } from "../../services/jwt";
+import { useAppStore } from "../../store";
 import { StatusPill, easing } from "../common";
 
 function FindingRow({ finding }: { finding: SecurityFinding }) {
@@ -38,7 +38,37 @@ function FindingRow({ finding }: { finding: SecurityFinding }) {
 }
 
 export function SecurityWorkspace() {
+  const token = useAppStore((state) => state.token);
+  const inspection = useAppStore((state) => state.inspection);
   const listRef = useRef<HTMLDivElement>(null);
+  const [findings, setFindings] = useState<SecurityFinding[]>([]);
+  const [error, setError] = useState("");
+  const [running, setRunning] = useState(false);
+
+  const run = async () => {
+    if (!token.trim()) {
+      setError("Paste and inspect a JWT first.");
+      return;
+    }
+
+    setRunning(true);
+    setError("");
+    try {
+      setFindings(await analyzeSecurityFindings(token));
+    } catch (caught) {
+      setError(
+        typeof caught === "object" &&
+          caught !== null &&
+          "message" in caught &&
+          typeof caught.message === "string"
+          ? caught.message
+          : "Security analysis failed",
+      );
+    } finally {
+      setRunning(false);
+    }
+  };
+
   useLayoutEffect(() => {
     const mm = gsap.matchMedia();
     mm.add("(prefers-reduced-motion: no-preference)", () => {
@@ -57,6 +87,15 @@ export function SecurityWorkspace() {
     });
     return () => mm.revert();
   }, []);
+  const highCount = findings.filter((finding) =>
+    ["critical", "high"].includes(finding.severity),
+  ).length;
+  const warningCount = findings.filter(
+    (finding) => finding.severity === "warning",
+  ).length;
+  const passedCount = findings.filter(
+    (finding) => finding.severity === "passed",
+  ).length;
   return (
     <div className="workspace-scroll workspace-pad">
       <div className="workspace-heading">
@@ -65,21 +104,25 @@ export function SecurityWorkspace() {
           <h2>Security findings</h2>
           <p>Evidence-based observations without an arbitrary risk score.</p>
         </div>
+        <button className="primary-button" onClick={run} disabled={running}>
+          <AlertTriangle />
+          {running ? "Analyzing…" : "Analyze token"}
+        </button>
       </div>
       <div className="security-summary">
         <div>
           <span className="severity-line high" />
-          <strong>1</strong>
+          <strong>{highCount}</strong>
           <small>High</small>
         </div>
         <div>
           <span className="severity-line warning" />
-          <strong>2</strong>
+          <strong>{warningCount}</strong>
           <small>Warnings</small>
         </div>
         <div>
           <span className="severity-line passed" />
-          <strong>2</strong>
+          <strong>{passedCount}</strong>
           <small>Passed</small>
         </div>
       </div>
@@ -87,11 +130,12 @@ export function SecurityWorkspace() {
         <section ref={listRef} className="panel findings-list">
           <div className="section-heading">
             <span>Findings</span>
-            <span>5 checks</span>
+            <span>{findings.length} checks</span>
           </div>
-          {securityFindings.map((finding) => (
+          {findings.map((finding) => (
             <FindingRow finding={finding} key={finding.id} />
           ))}
+          {!findings.length && <div className="empty-row">{error || "Analyze a loaded token to see findings."}</div>}
         </section>
         <aside className="security-aside">
           <section className="panel exposure">
@@ -100,33 +144,34 @@ export function SecurityWorkspace() {
               <Fingerprint />
             </div>
             <p>JWT payload data is encoded, not encrypted.</p>
-            <div className="exposure-row">
-              <span>Email</span>
-              <code>alex@example.test</code>
-            </div>
-            <div className="exposure-row">
-              <span>User ID</span>
-              <code>user_2841</code>
-            </div>
-            <div className="exposure-row">
-              <span>Roles</span>
-              <code>admin, reviewer</code>
-            </div>
+            {inspection?.claims.slice(0, 3).map((claim) => (
+              <div className="exposure-row" key={claim.key}>
+                <span>{claim.name}</span>
+                <code>
+                  {Array.isArray(claim.value) ? claim.value.join(", ") : claim.value}
+                </code>
+              </div>
+            ))}
+            {!inspection && <div className="empty-row">No token loaded.</div>}
           </section>
           <section className="panel size-panel">
             <div className="section-heading">
               <span>Token size</span>
-              <strong>2.84 KB</strong>
+              <strong>{inspection ? `${(inspection.bytes / 1000).toFixed(2)} KB` : "—"}</strong>
             </div>
             {[
-              ["Header", 52, 18],
-              ["Payload", 1910, 67],
-              ["Signature", 342, 15],
-            ].map(([label, bytes, width]) => (
+              ["Header", inspection?.header ? JSON.stringify(inspection.header).length : 0],
+              ["Payload", inspection?.payload ? JSON.stringify(inspection.payload).length : 0],
+              ["Signature", Math.max(token.split(".")[2]?.length ?? 0, 0)],
+            ].map(([label, bytes]) => (
               <div className="size-row" key={label}>
                 <span>{label}</span>
                 <div>
-                  <i style={{ width: `${width}%` }} />
+                  <i
+                    style={{
+                      width: `${inspection ? Math.max(8, Math.min(100, Number(bytes) / 20)) : 0}%`,
+                    }}
+                  />
                 </div>
                 <code>{bytes} B</code>
               </div>
@@ -137,4 +182,3 @@ export function SecurityWorkspace() {
     </div>
   );
 }
-

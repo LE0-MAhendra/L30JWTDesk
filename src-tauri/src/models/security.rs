@@ -29,3 +29,17 @@ pub struct ClaimValidationResult {
     pub primary_failure: Option<String>,
     pub steps: Vec<ClaimValidationStep>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SecurityAnalysisRequest {
+    pub token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SecurityFinding {
+    pub id: String,
+    pub severity: String,
+    pub title: String,
+    pub summary: String,
+    pub recommendation: String,
+}

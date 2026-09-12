@@ -6,8 +6,114 @@ use crate::{
     error::AppError,
     models::security::{
         ClaimValidationRequest, ClaimValidationResult, ClaimValidationState, ClaimValidationStep,
+        SecurityAnalysisRequest, SecurityFinding,
     },
 };
+
+#[tauri::command]
+pub fn analyze_security_findings(
+    request: SecurityAnalysisRequest,
+) -> Result<Vec<SecurityFinding>, AppError> {
+    let token = normalize_token(&request.token)?;
+    let parts = split_token(&token)?;
+    let header = parse_json(&decode_segment(&parts.header)?, "JWT header")?;
+    let payload = parse_json(&decode_segment(&parts.payload)?, "JWT payload")?;
+    let mut findings = Vec::new();
+
+    match header.get("alg").and_then(Value::as_str) {
+        Some("none") => findings.push(finding(
+            "alg-none",
+            "critical",
+            "Unsigned token",
+            "The token uses alg none.",
+            "Reject unsigned tokens.",
+        )),
+        Some(alg) if alg.starts_with("HS") => findings.push(finding(
+            "symmetric-alg",
+            "warning",
+            "Shared-secret algorithm",
+            "HMAC verification requires the verifier to know the signing secret.",
+            "Prefer RS256/JWKS for multi-service production systems.",
+        )),
+        Some(alg) if alg.starts_with("RS") => findings.push(finding(
+            "rsa-alg",
+            "passed",
+            "Asymmetric signing algorithm",
+            "RSA lets services verify tokens with a public key.",
+            "Keep the private signing key isolated.",
+        )),
+        Some(alg) => findings.push(finding(
+            "unknown-alg",
+            "warning",
+            "Less common algorithm",
+            format!("Token uses {alg}."),
+            "Confirm this algorithm is expected and supported.",
+        )),
+        None => findings.push(finding(
+            "missing-alg",
+            "high",
+            "Missing algorithm",
+            "The header has no alg value.",
+            "Reject tokens without an explicit algorithm.",
+        )),
+    }
+
+    if payload.get("exp").is_some() {
+        findings.push(finding(
+            "exp-present",
+            "passed",
+            "Expiration is present",
+            "The token has a bounded validity window.",
+            "No action required.",
+        ));
+    } else {
+        findings.push(finding(
+            "missing-exp",
+            "high",
+            "Missing expiration",
+            "The token has no exp claim.",
+            "Require exp for bearer tokens.",
+        ));
+    }
+
+    if let (Some(iat), Some(exp)) = (
+        payload.get("iat").and_then(Value::as_i64),
+        payload.get("exp").and_then(Value::as_i64),
+    ) {
+        let minutes = (exp - iat) / 60;
+        if minutes > 60 {
+            findings.push(finding(
+                "long-lifetime",
+                "warning",
+                "Long token lifetime",
+                format!("The token lifetime is about {minutes} minutes."),
+                "Use the shortest lifetime that fits the user flow.",
+            ));
+        }
+    }
+
+    if payload.get("email").is_some() || payload.get("phone").is_some() {
+        findings.push(finding(
+            "personal-data",
+            "warning",
+            "Payload contains personal data",
+            "JWT payloads are encoded, not encrypted.",
+            "Do not put sensitive personal data in bearer tokens.",
+        ));
+    }
+
+    if has_admin_role(&payload) {
+        findings.push(finding(
+            "admin-role",
+            "high",
+            "Administrative role",
+            "The token contains an admin role.",
+            "Issue narrow tokens for routine API access.",
+        ));
+    }
+
+    Ok(findings)
+}
 
 #[tauri::command]
 pub fn validate_token_claims(
@@ -138,10 +244,35 @@ fn step(
     }
 }
 
+fn has_admin_role(payload: &Value) -> bool {
+    payload
+        .get("roles")
+        .and_then(Value::as_array)
+        .is_some_and(|roles| roles.iter().any(|role| role.as_str() == Some("admin")))
+}
+
+fn finding(
+    id: impl Into<String>,
+    severity: impl Into<String>,
+    title: impl Into<String>,
+    summary: impl Into<String>,
+    recommendation: impl Into<String>,
+) -> SecurityFinding {
+    SecurityFinding {
+        id: id.into(),
+        severity: severity.into(),
+        title: title.into(),
+        summary: summary.into(),
+        recommendation: recommendation.into(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::validate_token_claims;
-    use crate::models::security::{ClaimValidationRequest, ClaimValidationState};
+    use super::{analyze_security_findings, validate_token_claims};
+    use crate::models::security::{
+        ClaimValidationRequest, ClaimValidationState, SecurityAnalysisRequest,
+    };
 
     const TOKEN: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImxvY2FsLXRlc3Qta2V5In0.eyJzdWIiOiJ1c2VyXzEyMyIsIm5hbWUiOiJMZW8gVGVzdGVyIiwicm9sZXMiOlsiYWRtaW4iLCJkZXZlbG9wZXIiXSwic2NvcGUiOiJyZWFkOndyaXRlIGp3dDp0ZXN0IiwiZXhwIjoyMDAwMDAwMDAwLCJpYXQiOjE3MDAwMDAwMDAsImlzcyI6ImwzMC1kZXYiLCJhdWQiOiJsMzAtand0LWRlc2sifQ.SUX74p4p5tBV_MWKlwxUBFZkL2Z8UyIfxgD3qh68x_A";
 
@@ -170,5 +301,16 @@ mod tests {
 
         assert_eq!(result.decision, ClaimValidationState::Fail);
         assert_eq!(result.primary_failure.as_deref(), Some("Audience"));
+    }
+
+    #[test]
+    fn reports_admin_role_and_expiration() {
+        let findings = analyze_security_findings(SecurityAnalysisRequest {
+            token: TOKEN.to_string(),
+        })
+        .unwrap();
+
+        assert!(findings.iter().any(|finding| finding.id == "admin-role"));
+        assert!(findings.iter().any(|finding| finding.id == "exp-present"));
     }
 }

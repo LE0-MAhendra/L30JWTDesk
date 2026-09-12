@@ -105,6 +105,14 @@ export interface ClaimValidationResult {
   steps: ClaimValidationStep[];
 }
 
+export interface SecurityFinding {
+  id: string;
+  severity: "critical" | "high" | "warning" | "info" | "passed";
+  title: string;
+  summary: string;
+  recommendation: string;
+}
+
 export async function inspectToken(
   token: string
 ): Promise<JwtInspectionResult> {
@@ -138,4 +146,12 @@ export async function validateTokenClaims(
   request: ClaimValidationRequest
 ): Promise<ClaimValidationResult> {
   return await invoke<ClaimValidationResult>("validate_token_claims", { request });
+}
+
+export async function analyzeSecurityFindings(
+  token: string
+): Promise<SecurityFinding[]> {
+  return await invoke<SecurityFinding[]>("analyze_security_findings", {
+    request: { token },
+  });
 }
