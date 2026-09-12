@@ -13,6 +13,7 @@ import { IconButton, StatusPill } from "../common";
 import {
   verifyToken,
   verifyTokenWithJwks,
+  verifyTokenWithOidc,
   type VerificationResult,
 } from "../../services/jwt";
 import { useAppStore } from "../../store";
@@ -29,11 +30,6 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
   const [error, setError] = useState("");
 
   const run = async () => {
-    if (mode === "oidc") {
-      notify("OIDC is not connected yet");
-      return;
-    }
-
     if (!token.trim()) {
       notify("Paste and inspect a JWT first");
       return;
@@ -52,6 +48,8 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
       const verification =
         mode === "jwks"
           ? await verifyTokenWithJwks({ token, jwks_url: value })
+          : mode === "oidc"
+            ? await verifyTokenWithOidc({ token, issuer_url: value })
           : await verifyToken({ token, secret: value });
       setResult(verification);
       notify(verification.message);
@@ -188,7 +186,7 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
           </div>
           <button
             className="primary-button verify-action"
-            disabled={!value || running || !token || mode === "oidc"}
+            disabled={!value || running || !token}
             onClick={run}
           >
             <ShieldCheck />
@@ -214,6 +212,8 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
                     {result
                       ? step === "Token"
                         ? "Loaded from Inspect"
+                        : step === "Discovery"
+                          ? "OIDC metadata fetched"
                         : step === "JWKS"
                           ? "JWKS fetched"
                           : step === "Key match" || step === "Key"
@@ -243,7 +243,9 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
                 <strong>{result.message}</strong>
                 <span>
                   {result.algorithm} · local{" "}
-                  {mode === "jwks"
+                  {mode === "oidc"
+                    ? "OIDC"
+                    : mode === "jwks"
                     ? "JWKS"
                     : result.algorithm.startsWith("HS")
                       ? "HMAC"

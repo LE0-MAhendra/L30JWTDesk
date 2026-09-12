@@ -26,6 +26,17 @@ pub struct JwksVerificationRequest {
     pub jwks_url: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OidcVerificationRequest {
+    pub token: String,
+    pub issuer_url: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OidcDiscoveryResponse {
+    pub jwks_uri: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct JwksResponse {
     pub keys: Vec<JwkKey>,

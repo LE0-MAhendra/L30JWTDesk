@@ -73,6 +73,11 @@ export interface JwksVerificationRequest {
   jwks_url: string;
 }
 
+export interface OidcVerificationRequest {
+  token: string;
+  issuer_url: string;
+}
+
 export interface VerificationResult {
   status: VerificationStatus;
   algorithm: string;
@@ -100,4 +105,10 @@ export async function verifyTokenWithJwks(
   request: JwksVerificationRequest
 ): Promise<VerificationResult> {
   return await invoke<VerificationResult>("verify_token_with_jwks", { request });
+}
+
+export async function verifyTokenWithOidc(
+  request: OidcVerificationRequest
+): Promise<VerificationResult> {
+  return await invoke<VerificationResult>("verify_token_with_oidc", { request });
 }
