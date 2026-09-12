@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { json } from "@codemirror/lang-json";
-import { EditorView } from "@codemirror/view";
+import { EditorView, keymap } from "@codemirror/view";
 import { gsap } from "gsap";
 import {
   Braces,
@@ -178,7 +178,7 @@ function TokenEditor({
   onInspect,
   notify,
 }: {
-  onInspect: () => void;
+  onInspect: () => void | Promise<void>;
   notify: (message: string) => void;
 }) {
   const { token, setToken, setInspection } = useAppStore();
@@ -247,7 +247,18 @@ function TokenEditor({
           document.documentElement.dataset.theme === "light" ? "light" : "dark"
         }
         onChange={setToken}
-        extensions={[EditorView.lineWrapping]}
+        extensions={[
+          EditorView.lineWrapping,
+          keymap.of([
+            {
+              key: "Mod-Enter",
+              run: () => {
+                if (useAppStore.getState().token.trim()) void onInspect();
+                return true;
+              },
+            },
+          ]),
+        ]}
         basicSetup={{
           lineNumbers: false,
           foldGutter: false,
