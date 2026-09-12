@@ -241,8 +241,9 @@ function TokenEditor({
         </div>
       </div>
       <CodeMirror
+        className="token-code-editor"
         value={token}
-        height="112px"
+        height="clamp(220px, 32vh, 360px)"
         theme={
           document.documentElement.dataset.theme === "light" ? "light" : "dark"
         }

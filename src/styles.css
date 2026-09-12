@@ -156,8 +156,10 @@ main { min-width: 0; min-height: 0; overflow: hidden; }
 .inspect-intro div { flex: 1; }
 .inspect-intro h2 { margin: 0 0 2px; font-size: 15px; font-weight: 600; }
 .inspect-intro p { margin: 0; color: var(--text-muted); font-size: 12px; }
-.token-editor { max-width: 1040px; margin: 0 auto; }
-.cm-editor { height: 100%; background: var(--editor-bg) !important; color: var(--text-primary); font: 12.5px/1.6 'Geist Mono Variable'; }
+.token-editor { width: 100%; max-width: 1240px; margin: 0 auto; }
+.token-editor .panel-toolbar { min-height: 52px; padding: 0 16px; }
+.token-code-editor { min-height: 220px; border-top: 1px solid var(--border-subtle); }
+.cm-editor { height: 100%; background: var(--editor-bg) !important; color: var(--text-primary); font: 13.5px/1.75 'Geist Mono Variable'; }
 .cm-editor .cm-scroller { overflow: auto; }
 .cm-editor .cm-gutters { background: var(--editor-bg); border-right-color: var(--border-subtle); color: var(--text-muted); }
 .cm-editor .cm-activeLine, .cm-editor .cm-activeLineGutter { background: var(--surface-2); }
@@ -394,4 +396,9 @@ main { min-width: 0; min-height: 0; overflow: hidden; }
   .sidebar .nav-item, .sidebar .collapse-button { padding-left: 11px; }
   .security-layout { grid-template-columns: minmax(500px, 1fr) 300px; }
   .verify-grid { grid-template-columns: minmax(360px, .9fr) minmax(400px, 1.1fr); }
+}
+@media (max-width: 760px) {
+  .token-editor .panel-toolbar { align-items: flex-start; flex-direction: column; padding: 12px; }
+  .token-editor .toolbar-actions { width: 100%; justify-content: flex-end; }
+  .token-code-editor { min-height: 190px; }
 }
