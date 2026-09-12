@@ -58,6 +58,18 @@ export function DebugWorkspace({ notify }: { notify: (message: string) => void }
       mode: reportMode.toLowerCase() as ReportMode,
     }).then(setReport);
   }, [reportMode, result]);
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || !event.shiftKey) return;
+      if (event.key.toLowerCase() !== "c" || !result) return;
+
+      event.preventDefault();
+      copyText(report, notify);
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [notify, report, result]);
   return (
     <div className="workspace-scroll workspace-pad">
       <div className="workspace-heading">
