@@ -31,6 +31,19 @@ cd src-tauri && cargo test
 - Analyze token security findings.
 - Compare two token payloads.
 - Generate redacted diagnostic reports.
+- Create locally signed HS256, HS384, HS512, and RS256 tokens.
+- Generate RSA-2048 public keys and JWKS JSON for RS256 tests.
+- Save, load, delete, and compare locally saved tokens.
+- Send the active token directly into Inspect, Verify, Security, Debug, and Compare.
+
+## Create and reuse a token
+
+Open the **Create** workspace (⌘6), choose an algorithm, edit the header and
+payload JSON, and generate the token. HS algorithms use the entered HMAC
+secret. RS256 generates a local RSA-2048 key pair; copy the displayed public
+key or JWKS into Verify. Save a token to keep it in local browser storage, then
+load it again to edit its header and payload. Secrets and private keys are not
+persisted.
 
 ## Quick HS256 test
 
