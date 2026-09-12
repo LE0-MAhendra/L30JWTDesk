@@ -5,6 +5,16 @@ import { SAMPLE_TOKEN } from "../../services";
 import { compareTokens, type TokenDiffRow } from "../../services/jwt";
 import { StatusPill, copyText } from "../common";
 
+function tokenMeta(token: string) {
+  try {
+    const header = JSON.parse(atob(token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/")));
+    const bytes = new TextEncoder().encode(token).length;
+    return `${header.alg ?? "JWT"} · ${(bytes / 1024).toFixed(2)} KB`;
+  } catch {
+    return token.trim() ? "Text" : "Empty";
+  }
+}
+
 export function CompareWorkspace({ notify }: { notify: (message: string) => void }) {
   const [a, setA] = useState(SAMPLE_TOKEN);
   const [b, setB] = useState(SAMPLE_TOKEN);
@@ -71,14 +81,14 @@ export function CompareWorkspace({ notify }: { notify: (message: string) => void
         <section className="panel">
           <div className="panel-toolbar">
             <span className="eyebrow">Token A</span>
-            <span className="toolbar-meta">RS256 · 2.84 KB</span>
+            <span className="toolbar-meta">{tokenMeta(a)}</span>
           </div>
           <CodeMirror value={a} onChange={setA} height="130px" theme="dark" />
         </section>
         <section className="panel">
           <div className="panel-toolbar">
             <span className="eyebrow">Token B</span>
-            <span className="toolbar-meta">RS256 · 2.81 KB</span>
+            <span className="toolbar-meta">{tokenMeta(b)}</span>
           </div>
           <CodeMirror value={b} onChange={setB} height="130px" theme="dark" />
         </section>
