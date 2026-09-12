@@ -10,6 +10,14 @@ const encode = (value: string) =>
     .replace(/\//g, "_");
 const encodeBytes = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 const decodeJson = (segment: string) => JSON.parse(decodeURIComponent(escape(atob(segment.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - segment.length % 4) % 4)))));
+const readSaved = (): string[] => {
+  try {
+    const value = JSON.parse(localStorage.getItem("l30-saved-tokens") ?? "[]");
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
+};
 
 async function signHs(input: string, secret: string, algorithm: "HS256" | "HS384" | "HS512") {
   const key = await crypto.subtle.importKey(
@@ -45,7 +53,7 @@ export function CreateWorkspace({ notify }: { notify: (message: string) => void 
   const [header, setHeader] = useState('{"alg":"HS256","typ":"JWT"}');
   const [payload, setPayload] = useState('{"sub":"user_123","role":"admin","iat":1700000000}');
   const [token, setCreatedToken] = useState("");
-  const [saved, setSaved] = useState<string[]>(() => JSON.parse(localStorage.getItem("l30-saved-tokens") ?? "[]"));
+  const [saved, setSaved] = useState<string[]>(readSaved);
   const [error, setError] = useState("");
   const [rsaKey, setRsaKey] = useState<CryptoKey | null>(null);
   const [publicKey, setPublicKey] = useState("");
