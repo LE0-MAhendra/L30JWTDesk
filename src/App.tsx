@@ -68,7 +68,8 @@ function App() {
       }
       if (mod && /^[1-6]$/.test(event.key)) {
         event.preventDefault();
-        setWorkspace(navItems[Number(event.key) - 1].id);
+        const target = navItems.find((item) => item.shortcut?.endsWith(event.key));
+        if (target) setWorkspace(target.id);
       }
       if (mod && event.key.toLowerCase() === "l") {
         event.preventDefault();
