@@ -21,5 +21,9 @@
     }],
     "security": { "csp": null }
   },
-  "bundle": { "active": true, "targets": "all", "icon": [] }
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/app-icon.png"]
+  }
 }
