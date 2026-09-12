@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { Copy, GitCompare } from "lucide-react";
 import { SAMPLE_TOKEN } from "../../services";
 import { compareTokens, type TokenDiffRow } from "../../services/jwt";
 import { StatusPill, copyText } from "../common";
+import { useAppStore } from "../../store";
 
 function tokenMeta(token: string) {
   try {
@@ -16,12 +17,16 @@ function tokenMeta(token: string) {
 }
 
 export function CompareWorkspace({ notify }: { notify: (message: string) => void }) {
-  const [a, setA] = useState(SAMPLE_TOKEN);
+  const selectedToken = useAppStore((state) => state.token);
+  const [a, setA] = useState(selectedToken || SAMPLE_TOKEN);
   const [b, setB] = useState(SAMPLE_TOKEN);
   const [filter, setFilter] = useState("Changed");
   const [rows, setRows] = useState<TokenDiffRow[]>([]);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
+  useEffect(() => {
+    if (selectedToken) setA(selectedToken);
+  }, [selectedToken]);
   const run = async () => {
     setRunning(true);
     setError("");
