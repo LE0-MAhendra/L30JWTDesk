@@ -3,6 +3,8 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-7c83ff.svg)
 ![Tauri 2](https://img.shields.io/badge/Tauri-2-24c8db.svg)
 
+[Privacy](PRIVACY.md) · [Support](SUPPORT.md) · [Microsoft Store listing](MICROSOFT_STORE.md)
+
 **L30JWTDesk** is a local-first, cross-platform workspace for inspecting,
 creating, verifying, comparing, and debugging JSON Web Tokens (JWTs).
 
@@ -12,6 +14,22 @@ JWKS or OIDC verification.
 
 > JWT payloads are encoded, not encrypted. Do not paste production secrets or
 > sensitive personal data unless you understand the risk.
+
+## Demo
+
+[![Watch the L30JWTDesk walkthrough](https://img.youtube.com/vi/viQ0rPAakE8/maxresdefault.jpg)](https://youtu.be/viQ0rPAakE8)
+
+[Watch the application walkthrough on YouTube](https://youtu.be/viQ0rPAakE8).
+
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/l301.png" alt="Inspect a JWT locally" width="49%">
+  <img src="screenshots/l302.png" alt="Create and sign a JWT" width="49%">
+  <img src="screenshots/l303.png" alt="Verify a JWT signature" width="49%">
+  <img src="screenshots/l304.png" alt="Review JWT security findings" width="49%">
+  <img src="screenshots/l305.png" alt="Compare JWT claims" width="49%">
+</p>
 
 ## Features
 
@@ -51,6 +69,7 @@ Never install files ending in `-unsigned.apk`; Android will reject them.
 
 Sensitive material stays in memory. Saved tokens and appearance preferences
 use local device storage. The app does not include analytics or a backend.
+See the full [Privacy Policy](PRIVACY.md).
 
 ## Development
 
@@ -118,6 +137,8 @@ Never commit JWTs, private keys, keystores, or other secrets.
 
 Please report vulnerabilities privately to the repository owner rather than
 opening a public issue with exploit details.
+
+For installation help and issue-reporting guidance, see [Support](SUPPORT.md).
 
 ## License
 
