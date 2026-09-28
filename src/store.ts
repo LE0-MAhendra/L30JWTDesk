@@ -36,5 +36,8 @@ export const useAppStore = create<AppState>((set) => ({
   },
   setToken: (token) => set({ token }),
   setInspection: (inspection) => set({ inspection }),
-  clearSensitive: () => set({ token: '', inspection: null }),
+  clearSensitive: () => {
+    localStorage.removeItem('l30-saved-tokens');
+    set({ token: '', inspection: null });
+  },
 }));

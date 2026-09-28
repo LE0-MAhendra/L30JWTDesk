@@ -8,13 +8,5 @@ export default defineConfig({
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
     target: 'safari13',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          codemirror: ['@uiw/react-codemirror', '@codemirror/lang-json', '@codemirror/view'],
-          ui: ['@radix-ui/react-tooltip', 'gsap', 'lucide-react', 'zustand'],
-        },
-      },
-    },
   },
 });

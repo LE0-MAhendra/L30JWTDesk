@@ -1,173 +1,124 @@
 # L30JWTDesk
 
-L30JWTDesk is a local-first desktop workspace for inspecting, creating,
-verifying, comparing, and debugging JSON Web Tokens (JWTs).
+![License: MIT](https://img.shields.io/badge/License-MIT-7c83ff.svg)
+![Tauri 2](https://img.shields.io/badge/Tauri-2-24c8db.svg)
 
-It is built with [Tauri 2](https://tauri.app/), Rust, React, TypeScript,
-Vite, CodeMirror, and Zustand.
+**L30JWTDesk** is a local-first, cross-platform workspace for inspecting,
+creating, verifying, comparing, and debugging JSON Web Tokens (JWTs).
 
-> JWT payloads are encoded, not encrypted. Never paste production secrets or
-> sensitive personal data into a token unless you understand the risk.
+The app runs on desktop and Android. Token parsing, claim analysis, and
+signature checks happen locally; network access is used only when you choose
+JWKS or OIDC verification.
+
+> JWT payloads are encoded, not encrypted. Do not paste production secrets or
+> sensitive personal data unless you understand the risk.
 
 ## Features
 
-- **Inspect** JWT headers, payloads, standard claims, token status, lifetime,
-  and encoded size.
-- **Create** locally signed HS256, HS384, HS512, and RS256 tokens.
-- **Verify** HMAC signatures with a shared secret and RSA signatures with a
-  public PEM key.
-- **Verify with JWKS** by fetching a matching RSA key using the token `kid`.
-- **Verify with OIDC** by discovering the issuer metadata and JWKS endpoint.
-- **Validate claims** including `exp`, `nbf`, optional `iss`, and optional
-  `aud`, with 60 seconds of clock skew in the Debug workspace.
-- **Analyze security findings** such as unsigned tokens, missing expiration,
-  long lifetimes, embedded personal data, and administrative roles.
-- **Compare** the payload claims of two JWTs and filter the diff.
-- **Debug** rejected-token policy checks and copy or save summary, redacted,
-  or full diagnostic reports.
-- **Save tokens locally** for reuse, loading, editing, comparison, or deletion.
-- **Customize** theme, sidebar state, UI density, and reduced motion.
+- Inspect JWT headers, payloads, standard claims, token lifetime, and size.
+- Create HMAC and RSA JWTs locally.
+- Verify HMAC and RSA signatures with local keys, JWKS, or OIDC discovery.
+- Compare token claims, assess common security risks, and generate redacted
+  diagnostic reports.
+- Store tokens and interface preferences only on the current device.
+- Supports light/dark themes, keyboard shortcuts, reduced motion, phone
+  portrait mode, and landscape mode.
 
-## Requirements
+## Install
 
-- Node.js 18+ with npm
-- Rust and Cargo
-- Tauri 2 system prerequisites for your operating system
+Download the signed asset for your device from
+[GitHub Releases](https://github.com/LE0-MAhendra/L30JWTDesk/releases).
 
-See the [Tauri prerequisites guide](https://tauri.app/start/prerequisites/)
-for platform-specific dependencies.
+- **Windows:** MSI or NSIS EXE.
+- **Linux:** AppImage, DEB, or RPM.
+- **macOS:** DMG for Apple Silicon or Intel.
+- **Android:** install the signed ARM64 APK. Android may ask you to allow
+  installs from the app used to open the download.
 
-## Development setup
+Never install files ending in `-unsigned.apk`; Android will reject them.
 
-Clone the repository, install the JavaScript dependencies, and start the
-desktop app:
+## How to use
+
+1. Open **Inspect** and paste a compact JWT, `Bearer <token>`, or an
+   `Authorization: Bearer <token>` value.
+2. Review the decoded header, payload, timeline, and claim overview.
+3. Send the active token to **Verify**, **Security**, **Compare**, or
+   **Debug**.
+4. Use a local secret/public key, JWKS URL, or OIDC issuer only when needed.
+5. Copy or save a redacted report before sharing diagnostics.
+
+## Privacy
+
+Sensitive material stays in memory. Saved tokens and appearance preferences
+use local device storage. The app does not include analytics or a backend.
+
+## Development
+
+Requirements: Node.js 20+, Rust, and the
+[Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS.
 
 ```bash
 npm install
 npm run tauri dev
 ```
 
-The Tauri app starts Vite automatically. Use the browser-only frontend only
-for UI work:
+Browser-only UI development:
 
 ```bash
 npm run dev
 ```
 
-The browser-only mode cannot execute the Rust-backed inspect, verify,
-security, compare, or debug commands.
-
-## Checks and build
-
-Run the frontend type-check/build and Rust tests:
+Run checks:
 
 ```bash
 npm run build
 cd src-tauri && cargo test
 ```
 
-Build installable desktop bundles with Tauri:
+## Builds and releases
 
 ```bash
-npm run tauri build
+# Linux packages
+npm run tauri build -- --bundles appimage,deb,rpm
+
+# Android APK/AAB builds
+npm run tauri android build --apk --aab --split-per-abi --ci
 ```
 
-## Typical workflow
+GitHub Actions runs quality, security, desktop release, and Android release
+workflows. Tagged releases include Tauri-signed updater artifacts and
+Android-keystore-signed mobile artifacts.
 
-1. Open **Inspect** and paste a compact JWT, a `Bearer <token>` value, or an
-   `Authorization: Bearer <token>` value.
-2. Inspect the decoded header, payload, claims, and timeline.
-3. Send the active token to **Verify**, **Security**, **Debug**, or **Compare**.
-4. Choose the appropriate verification material or endpoint.
-5. Copy or save a redacted diagnostic report when sharing results.
+### Release secrets
 
-Inspection, comparison, security analysis, and claim validation are local.
-Network access happens only when **JWKS** or **OIDC** verification is run.
-Secrets and private RSA keys are kept in memory and are not persisted.
-Saved tokens and appearance preferences use this device's local browser
-storage.
+Keep private signing material out of this public repository. Configure these
+GitHub Actions secrets before publishing a release:
 
-## Local JWKS/OIDC test server
+- `TAURI_SIGNING_PRIVATE_KEY`
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (if the updater key is protected)
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
 
-The repository includes a small local server with a fixed RSA test key:
+The Tauri updater checks GitHub Releases after startup and installs a verified
+desktop update when available. Android updates should be distributed through a
+signed APK release or an app store.
 
-```bash
-npm run jwks:test
-```
-
-Use these values in **Verify**:
-
-```text
-JWKS URL:    http://127.0.0.1:8787/.well-known/jwks.json
-OIDC issuer: http://127.0.0.1:8787
-```
-
-Set `JWKS_PORT` to use another local port:
-
-```bash
-JWKS_PORT=8788 npm run jwks:test
-```
-
-The local server provides only:
-
-- `/.well-known/jwks.json`
-- `/.well-known/openid-configuration`
-
-## Keyboard shortcuts
-
-Shortcuts use `⌘` on macOS and `Ctrl` on Windows/Linux.
-
-| Shortcut | Action |
-| --- | --- |
-| `⌘/Ctrl + K` | Open command palette |
-| `⌘/Ctrl + 1` | Inspect |
-| `⌘/Ctrl + 2` | Verify |
-| `⌘/Ctrl + 3` | Security |
-| `⌘/Ctrl + 4` | Compare |
-| `⌘/Ctrl + 5` | Debug |
-| `⌘/Ctrl + 6` | Create |
-| `⌘/Ctrl + ,` | Settings |
-| `⌘/Ctrl + L` | Clear sensitive in-memory data |
-| `⌘/Ctrl + Shift + C` | Copy the current diagnostic report |
-| `⌘/Ctrl + Enter` | Inspect the current token |
-
-## Project layout
-
-```text
-src/
-├── App.tsx                         Application shell and workspace routing
-├── components/                     React workspaces and shared UI
-├── services/jwt.ts                 Typed frontend calls to Tauri commands
-├── store.ts                        Active token and UI preferences
-└── styles.css                      Application styles
-
-src-tauri/
-├── src/commands/                   Rust JWT, verification, security, and report logic
-├── src/models/                     Rust request and response types
-├── src/error.rs                    Shared command error type
-└── tauri.conf.json                 Desktop window and bundle configuration
-
-scripts/jwks-server.mjs             Local JWKS/OIDC test server
-```
-
-## Current scope
-
-- RSA verification accepts RS256, RS384, and RS512 with RSA public PEM keys,
-  JWKS, or OIDC discovery.
-- The Create workspace generates RSA-2048 material for RS256 only.
-- JWKS/OIDC verification requires an HTTP(S) URL and a matching RSA `kid`.
-- This is a developer diagnostic tool, not a replacement for production JWT
-  policy enforcement or key management.
+Windows Authenticode and macOS Developer ID signing require your own vendor
+certificates; do not add those certificates to this public repository.
 
 ## Contributing
 
-Keep changes small and verify them with:
+Issues and pull requests are welcome. Keep changes focused, add or update
+tests when behavior changes, and run the checks above before opening a PR.
+Never commit JWTs, private keys, keystores, or other secrets.
 
-```bash
-npm run build
-cd src-tauri && cargo test
-```
+## Security
 
-Please include a short description of the behavior changed and the checks you
-ran. Do not commit real tokens, secrets, private keys, or generated local
-reports.
+Please report vulnerabilities privately to the repository owner rather than
+opening a public issue with exploit details.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import CodeMirror from "@uiw/react-codemirror";
 import { Copy, GitCompare } from "lucide-react";
-import { SAMPLE_TOKEN } from "../../services";
 import { compareTokens, type TokenDiffRow } from "../../services/jwt";
 import { StatusPill, copyText } from "../common";
 import { useAppStore } from "../../store";
@@ -18,8 +16,8 @@ function tokenMeta(token: string) {
 
 export function CompareWorkspace({ notify }: { notify: (message: string) => void }) {
   const selectedToken = useAppStore((state) => state.token);
-  const [a, setA] = useState(selectedToken || SAMPLE_TOKEN);
-  const [b, setB] = useState(SAMPLE_TOKEN);
+  const [a, setA] = useState(selectedToken || "");
+  const [b, setB] = useState("");
   const [filter, setFilter] = useState("All");
   const [rows, setRows] = useState<TokenDiffRow[]>([]);
   const [running, setRunning] = useState(false);
@@ -85,7 +83,7 @@ export function CompareWorkspace({ notify }: { notify: (message: string) => void
           <Copy />
           Copy diff
         </button>
-        <button className="primary-button" onClick={run} disabled={running}>
+        <button className="primary-button" onClick={run} disabled={running || !a.trim() || !b.trim()}>
           <GitCompare />
           {running ? "Comparing…" : "Compare"}
         </button>
@@ -96,7 +94,13 @@ export function CompareWorkspace({ notify }: { notify: (message: string) => void
             <span className="eyebrow">Token A</span>
             <span className="toolbar-meta">{tokenMeta(a)}</span>
           </div>
-          <CodeMirror value={a} onChange={setA} height="130px" theme="dark" />
+          <textarea
+            className="compact-editor"
+            aria-label="Token A"
+            value={a}
+            onChange={(event) => setA(event.target.value)}
+            spellCheck={false}
+          />
         </section>
         <section className="panel">
           <div className="panel-toolbar">
@@ -107,7 +111,13 @@ export function CompareWorkspace({ notify }: { notify: (message: string) => void
             <option value="">Load saved token…</option>
             {saved.map((item) => { const [label, value] = item.split(":"); return <option key={item} value={value}>{label}</option>; })}
           </select>}
-          <CodeMirror value={b} onChange={setB} height="130px" theme="dark" />
+          <textarea
+            className="compact-editor"
+            aria-label="Token B"
+            value={b}
+            onChange={(event) => setB(event.target.value)}
+            spellCheck={false}
+          />
         </section>
       </div>
       <section className="panel diff-panel">

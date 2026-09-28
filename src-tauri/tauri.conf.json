@@ -14,16 +14,31 @@
       "title": "L30JWTDesk",
       "width": 1440,
       "height": 900,
-      "minWidth": 1100,
-      "minHeight": 700,
+      "minWidth": 360,
+      "minHeight": 520,
       "decorations": false,
       "resizable": true
     }],
-    "security": { "csp": null }
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' http: https:; img-src 'self' asset: data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    }
   },
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": ["icons/app-icon.png"]
+    "icon": [
+      "icons/app-icon.png",
+      "icons/icon.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU4N0YzMDdDM0NFNDY1QzcKUldUSFplUThmREIvV05LMHFnNWlycm9ROUoxRHhCOU8wY0svNkk1b3BWNUMwQ3BXVWVKRHdXTHgK",
+      "endpoints": [
+        "https://github.com/LE0-MAhendra/L30JWTDesk/releases/latest/download/latest.json"
+      ]
+    }
   }
 }

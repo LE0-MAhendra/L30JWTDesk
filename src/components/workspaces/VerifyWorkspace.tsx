@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import CodeMirror from "@uiw/react-codemirror";
 import {
   Eye,
   EyeOff,
@@ -115,13 +114,7 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
               setMode(item);
               setResult(null);
               setError("");
-              setValue(
-                item === "jwks"
-                  ? "http://127.0.0.1:8787/.well-known/jwks.json"
-                  : item === "oidc"
-                    ? "https://issuer.example.com"
-                    : "",
-              );
+              setValue("");
             }}
           >
             {item === "secret" ? (
@@ -150,12 +143,15 @@ export function VerifyWorkspace({ notify }: { notify: (message: string) => void 
           </div>
           <label htmlFor="verify-value">{titles[mode]}</label>
           {mode === "public" ? (
-            <CodeMirror
+            <textarea
+              id="verify-value"
+              className="key-editor"
               value={value}
-              onChange={setValue}
-              height="220px"
-              theme="dark"
+              onChange={(event) => setValue(event.target.value)}
               placeholder="-----BEGIN PUBLIC KEY-----"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
             />
           ) : mode === "secret" ? (
             <div className="secret-field">

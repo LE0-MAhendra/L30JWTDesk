@@ -1,5 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
+import { useState } from "react";
 import {
   AlertTriangle,
   Check,
@@ -9,7 +8,7 @@ import {
 } from "lucide-react";
 import { analyzeSecurityFindings, type SecurityFinding } from "../../services/jwt";
 import { useAppStore } from "../../store";
-import { StatusPill, easing } from "../common";
+import { StatusPill } from "../common";
 
 function FindingRow({ finding }: { finding: SecurityFinding }) {
   const [open, setOpen] = useState(false);
@@ -40,7 +39,6 @@ function FindingRow({ finding }: { finding: SecurityFinding }) {
 export function SecurityWorkspace() {
   const token = useAppStore((state) => state.token);
   const inspection = useAppStore((state) => state.inspection);
-  const listRef = useRef<HTMLDivElement>(null);
   const [findings, setFindings] = useState<SecurityFinding[]>([]);
   const [error, setError] = useState("");
   const [running, setRunning] = useState(false);
@@ -69,24 +67,6 @@ export function SecurityWorkspace() {
     }
   };
 
-  useLayoutEffect(() => {
-    const mm = gsap.matchMedia();
-    mm.add("(prefers-reduced-motion: no-preference)", () => {
-      const ctx = gsap.context(
-        () =>
-          gsap.from(".finding", {
-            opacity: 0,
-            y: 6,
-            duration: 0.22,
-            stagger: 0.04,
-            ease: easing,
-          }),
-        listRef,
-      );
-      return () => ctx.revert();
-    });
-    return () => mm.revert();
-  }, []);
   const highCount = findings.filter((finding) =>
     ["critical", "high"].includes(finding.severity),
   ).length;
@@ -127,7 +107,7 @@ export function SecurityWorkspace() {
         </div>
       </div>
       <div className="security-layout">
-        <section ref={listRef} className="panel findings-list">
+        <section className="panel findings-list findings-enter">
           <div className="section-heading">
             <span>Findings</span>
             <span>{findings.length} checks</span>

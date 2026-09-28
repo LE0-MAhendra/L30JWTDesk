@@ -1,5 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
+import { useEffect, useState } from "react";
 import {
   Fingerprint,
   GitCompareArrows,
@@ -18,7 +17,6 @@ import {
 } from "lucide-react";
 import { useAppStore } from "../store";
 import type { Workspace } from "../types";
-import { DURATIONS, Tip, easing } from "./common";
 
 export const navItems: Array<{
   id: Workspace;
@@ -47,51 +45,28 @@ export const workspaceLabels: Record<Workspace, string> = {
 export function Sidebar() {
   const { sidebarCollapsed, toggleSidebar, workspace, setWorkspace } =
     useAppStore();
-  const ref = useRef<HTMLElement>(null);
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.to(ref.current, {
-        width: sidebarCollapsed ? 56 : 212,
-        duration: DURATIONS.control,
-        ease: easing,
-      });
-      gsap.to(".nav-label, .nav-shortcut, .sidebar-section-label", {
-        opacity: sidebarCollapsed ? 0 : 1,
-        x: sidebarCollapsed ? -5 : 0,
-        duration: DURATIONS.micro,
-        ease: easing,
-      });
-    }, ref);
-    return () => ctx.revert();
-  }, [sidebarCollapsed]);
-
   const navButton = ({
     id,
     label,
     icon: Icon,
     shortcut,
   }: (typeof navItems)[number]) => (
-    <Tip
+    <button
       key={id}
-      label={
-        sidebarCollapsed ? label : `${label}${shortcut ? ` · ${shortcut}` : ""}`
-      }
+      className={`nav-item ${workspace === id ? "active" : ""}`}
+      aria-current={workspace === id ? "page" : undefined}
+      aria-label={sidebarCollapsed ? label : undefined}
+      title={`${label}${shortcut ? ` · ${shortcut}` : ""}`}
+      onClick={() => setWorkspace(id)}
     >
-      <button
-        className={`nav-item ${workspace === id ? "active" : ""}`}
-        aria-current={workspace === id ? "page" : undefined}
-        onClick={() => setWorkspace(id)}
-      >
-        <Icon aria-hidden="true" />
-        <span className="nav-label">{label}</span>
-        {shortcut && <span className="nav-shortcut">{shortcut}</span>}
-      </button>
-    </Tip>
+      <Icon aria-hidden="true" />
+      <span className="nav-label">{label}</span>
+      {shortcut && <span className="nav-shortcut">{shortcut}</span>}
+    </button>
   );
 
   return (
     <aside
-      ref={ref}
       className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}
     >
       <div className="sidebar-top">
@@ -137,7 +112,6 @@ export function CommandPalette({
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const setTheme = useAppStore((s) => s.setTheme);
   const clearSensitive = useAppStore((s) => s.clearSensitive);
-  const paletteRef = useRef<HTMLDivElement>(null);
   const commands: PaletteCommand[] = [
     ...navItems.map((item) => ({
       label: `Open ${item.label}`,
@@ -151,7 +125,7 @@ export function CommandPalette({
       icon: Trash2,
       action: () => {
         clearSensitive();
-        notify("Sensitive data cleared");
+        notify("Sensitive data and saved tokens cleared");
       },
     },
     { label: "Toggle sidebar", icon: Menu, action: toggleSidebar },
@@ -175,31 +149,13 @@ export function CommandPalette({
           word.startsWith(query.toLowerCase()),
       ),
   );
-  useLayoutEffect(() => {
-    if (!open) return;
-    setQuery("");
-    const ctx = gsap.context(
-      () =>
-        gsap.fromTo(
-          paletteRef.current,
-          { opacity: 0, y: -8, scale: 0.98 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: DURATIONS.micro,
-            ease: easing,
-          },
-        ),
-      paletteRef,
-    );
-    return () => ctx.revert();
+  useEffect(() => {
+    if (open) setQuery("");
   }, [open]);
   if (!open) return null;
   return (
     <div className="palette-backdrop" role="presentation" onMouseDown={onClose}>
       <div
-        ref={paletteRef}
         className="command-palette"
         role="dialog"
         aria-modal="true"

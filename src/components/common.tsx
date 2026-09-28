@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import * as Tooltip from "@radix-ui/react-tooltip";
 import { AppWindow, Minimize2, X } from "lucide-react";
-
-export const DURATIONS = { micro: 0.14, control: 0.2, panel: 0.26 };
-export const easing = "power2.out";
 
 export function Logo({ size = 24 }: { size?: number }) {
   return (
@@ -39,26 +35,6 @@ export function Logo({ size = 24 }: { size?: number }) {
   );
 }
 
-export function Tip({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <Tooltip.Root delayDuration={450}>
-      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content className="tooltip" sideOffset={7}>
-          {label}
-          <Tooltip.Arrow className="tooltip-arrow" />
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
-  );
-}
-
 export function IconButton({
   label,
   onClick,
@@ -71,17 +47,16 @@ export function IconButton({
   pressed?: boolean;
 }) {
   return (
-    <Tip label={label}>
-      <button
-        className="icon-button"
-        type="button"
-        aria-label={label}
-        aria-pressed={pressed}
-        onClick={onClick}
-      >
-        {children}
-      </button>
-    </Tip>
+    <button
+      className="icon-button"
+      type="button"
+      aria-label={label}
+      aria-pressed={pressed}
+      title={label}
+      onClick={onClick}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -159,4 +134,3 @@ export function WindowControls() {
     </div>
   );
 }
-

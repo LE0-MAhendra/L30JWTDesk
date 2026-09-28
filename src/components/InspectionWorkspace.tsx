@@ -1,8 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
-import CodeMirror from "@uiw/react-codemirror";
-import { json } from "@codemirror/lang-json";
-import { EditorView, keymap } from "@codemirror/view";
-import { gsap } from "gsap";
+import React, { useRef, useState } from "react";
 import {
   Braces,
   Clipboard,
@@ -12,10 +8,8 @@ import {
   Fingerprint,
   Play,
   ShieldQuestion,
-  Sparkles,
   Trash2,
 } from "lucide-react";
-import { SAMPLE_TOKEN } from "../services";
 import { inspectToken } from "../services/jwt";
 import { useAppStore } from "../store";
 import type { Claim, TokenInspection } from "../types";
@@ -24,7 +18,6 @@ import {
   IconButton,
   Logo,
   StatusPill,
-  Tip,
   copyText,
 } from "./common";
 
@@ -240,34 +233,21 @@ function TokenEditor({
           </button>
         </div>
       </div>
-      <CodeMirror
+      <textarea
         className="token-code-editor"
         value={token}
-        height="clamp(220px, 32vh, 360px)"
-        theme={
-          document.documentElement.dataset.theme === "light" ? "light" : "dark"
-        }
-        onChange={setToken}
-        extensions={[
-          EditorView.lineWrapping,
-          keymap.of([
-            {
-              key: "Mod-Enter",
-              run: () => {
-                if (useAppStore.getState().token.trim()) void onInspect();
-                return true;
-              },
-            },
-          ]),
-        ]}
-        basicSetup={{
-          lineNumbers: false,
-          foldGutter: false,
-          highlightActiveLine: false,
-          highlightActiveLineGutter: false,
+        onChange={(event) => setToken(event.target.value)}
+        onKeyDown={(event) => {
+          if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+            event.preventDefault();
+            if (token.trim()) void onInspect();
+          }
         }}
         placeholder="Paste a JWT, Bearer token, or Authorization header…"
         aria-label="JWT token input"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
       />
       {context && (
         <div
@@ -304,27 +284,8 @@ function TokenSegments({
 }: {
   onSelect: (tab: "payload" | "header" | "raw") => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const mm = gsap.matchMedia();
-    mm.add("(prefers-reduced-motion: no-preference)", () => {
-      const ctx = gsap.context(
-        () =>
-          gsap.from(".segment", {
-            scaleX: 0.86,
-            opacity: 0,
-            duration: 0.28,
-            stagger: 0.07,
-            ease: "power3.out",
-          }),
-        ref,
-      );
-      return () => ctx.revert();
-    });
-    return () => mm.revert();
-  }, []);
   return (
-    <div ref={ref} className="segments" aria-label="Token segments">
+    <div className="segments segments-enter" aria-label="Token segments">
       <button
         className="segment segment-header"
         onClick={() => onSelect("header")}
@@ -372,9 +333,7 @@ function ClaimsView({ notify }: { notify: (message: string) => void }) {
             <h3>{group}</h3>
             {claims.map((claim) => (
               <div className="claim-row" key={claim.key}>
-                <Tip label={claim.hint ?? claim.name}>
-                  <code>{claim.key}</code>
-                </Tip>
+                <code title={claim.hint ?? claim.name}>{claim.key}</code>
                 <div>
                   <span className="claim-name">{claim.name}</span>
                   {Array.isArray(claim.value) ? (
@@ -502,7 +461,7 @@ export function InspectionWorkspace({
 }: {
   notify: (message: string) => void;
 }) {
-  const { token, inspection, setInspection, setToken } = useAppStore();
+  const { token, inspection, setInspection } = useAppStore();
   const [tab, setTab] = useState<"payload" | "header" | "claims" | "raw">(
     "payload",
   );
@@ -542,32 +501,21 @@ export function InspectionWorkspace({
       notify("Token inspection failed");
     }
   };
-  const loadSample = async () => {
-    setToken(SAMPLE_TOKEN);
-    try {
-      const result = await inspectToken(SAMPLE_TOKEN);
-      setInspection(mapInspection(result));
-      notify("Sample token loaded");
-    } catch (error) {
-      console.error(error);
-      notify("Sample token inspection failed");
-    }
-  };
   const resize = (event: React.PointerEvent) => {
     const pane = paneRef.current;
     if (!pane) return;
     event.currentTarget.setPointerCapture(event.pointerId);
+    let nextLeftWidth = leftWidth;
     const move = (moveEvent: PointerEvent) => {
       const rect = pane.getBoundingClientRect();
-      setLeftWidth(
-        Math.max(
-          48,
-          Math.min(78, ((moveEvent.clientX - rect.left) / rect.width) * 100),
-        ),
+      nextLeftWidth = Math.max(
+        48,
+        Math.min(78, ((moveEvent.clientX - rect.left) / rect.width) * 100),
       );
+      setLeftWidth(nextLeftWidth);
     };
     const up = () => {
-      localStorage.setItem("l30-pane", String(leftWidth));
+      localStorage.setItem("l30-pane", String(nextLeftWidth));
       window.removeEventListener("pointermove", move);
     };
     window.addEventListener("pointermove", move);
@@ -586,13 +534,6 @@ export function InspectionWorkspace({
               processed locally.
             </p>
           </div>
-          <button
-            className="secondary-button"
-            onClick={loadSample}
-          >
-            <Sparkles />
-            Load sample
-          </button>
         </div>
       )}
       <TokenEditor onInspect={inspect} notify={notify} />
@@ -632,8 +573,8 @@ export function InspectionWorkspace({
                 {tab === "claims" ? (
                   <ClaimsView notify={notify} />
                 ) : (
-                  <CodeMirror
-                    value={
+                  <pre className="code-output" tabIndex={0}>
+                    {
                       tab === "raw"
                         ? token
                         : JSON.stringify(
@@ -644,19 +585,7 @@ export function InspectionWorkspace({
                             2,
                           )
                     }
-                    height="100%"
-                    theme={
-                      document.documentElement.dataset.theme === "light"
-                        ? "light"
-                        : "dark"
-                    }
-                    extensions={[json()]}
-                    readOnly
-                    basicSetup={{
-                      highlightActiveLine: false,
-                      highlightActiveLineGutter: false,
-                    }}
-                  />
+                  </pre>
                 )}
               </div>
             </section>
@@ -667,6 +596,15 @@ export function InspectionWorkspace({
               tabIndex={0}
               onPointerDown={resize}
               onDoubleClick={() => setLeftWidth(70)}
+              onKeyDown={(event) => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                setLeftWidth((width) => {
+                  const next = event.key === 'Home' ? 48 : event.key === 'End' ? 78 : Math.max(48, Math.min(78, width + (event.key === 'ArrowLeft' ? -2 : 2)));
+                  localStorage.setItem("l30-pane", String(next));
+                  return next;
+                });
+              }}
             />
             <Overview />
           </div>
