@@ -17,7 +17,6 @@ val releaseSigningReady = listOf(
     "ANDROID_KEYSTORE_PATH",
     "ANDROID_KEYSTORE_PASSWORD",
     "ANDROID_KEY_ALIAS",
-    "ANDROID_KEY_PASSWORD",
 ).all { !System.getenv(it).isNullOrBlank() }
 
 android {
@@ -37,7 +36,8 @@ android {
                 storeFile = file(System.getenv("ANDROID_KEYSTORE_PATH"))
                 storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("ANDROID_KEY_ALIAS")
-                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD").takeUnless { it.isNullOrBlank() }
+                    ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
             }
         }
     }

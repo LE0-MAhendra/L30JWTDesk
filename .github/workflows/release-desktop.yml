@@ -4,6 +4,19 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      msix_identity_name:
+        description: Package identity name from Partner Center
+        required: false
+        type: string
+      msix_publisher:
+        description: Publisher ID from Partner Center (for example, CN=...)
+        required: false
+        type: string
+      msix_publisher_display_name:
+        description: Publisher display name from Partner Center
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -50,3 +63,65 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+      - name: Build Microsoft Store package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          MSIX_IDENTITY_NAME: ${{ inputs.msix_identity_name || vars.MS_STORE_IDENTITY_NAME }}
+          MSIX_PUBLISHER: ${{ inputs.msix_publisher || vars.MS_STORE_PUBLISHER }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ inputs.msix_publisher_display_name || vars.MS_STORE_PUBLISHER_DISPLAY_NAME }}
+        run: |
+          if (!$env:MSIX_IDENTITY_NAME -or !$env:MSIX_PUBLISHER -or !$env:MSIX_PUBLISHER_DISPLAY_NAME) {
+            throw 'Set the MS_STORE_IDENTITY_NAME, MS_STORE_PUBLISHER, and MS_STORE_PUBLISHER_DISPLAY_NAME repository variables from Partner Center.'
+          }
+
+          $env:VITE_MICROSOFT_STORE = 'true'
+          npm run tauri build -- --no-bundle
+          if ($LASTEXITCODE -ne 0) { throw "Microsoft Store app build failed with exit code $LASTEXITCODE." }
+
+          $version = (Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json).version
+          $storeVersion = "$version.0"
+          $stage = Join-Path $env:RUNNER_TEMP 'l30jwtdesk-msix'
+          $assets = Join-Path $stage 'Assets'
+          New-Item -ItemType Directory -Force $assets | Out-Null
+
+          Copy-Item src-tauri/target/release/l30-jwt-desk.exe $stage
+          Copy-Item src-tauri/icons/StoreLogo.png $assets
+          Copy-Item src-tauri/icons/Square44x44Logo.png $assets
+          Copy-Item src-tauri/icons/Square150x150Logo.png $assets
+
+          $manifest = Get-Content src-tauri/msix/AppxManifest.xml -Raw
+          $manifest = $manifest.Replace('__IDENTITY_NAME__', [System.Security.SecurityElement]::Escape($env:MSIX_IDENTITY_NAME))
+          $manifest = $manifest.Replace('__PUBLISHER__', [System.Security.SecurityElement]::Escape($env:MSIX_PUBLISHER))
+          $manifest = $manifest.Replace('__PUBLISHER_DISPLAY_NAME__', [System.Security.SecurityElement]::Escape($env:MSIX_PUBLISHER_DISPLAY_NAME))
+          $manifest = $manifest.Replace('__VERSION__', $storeVersion)
+          Set-Content (Join-Path $stage 'AppxManifest.xml') $manifest -Encoding utf8
+
+          $makeAppx = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\makeappx.exe" |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (!$makeAppx) { throw 'MakeAppx.exe was not found on the runner.' }
+
+          $output = Join-Path $PWD 'msix-output'
+          New-Item -ItemType Directory -Force $output | Out-Null
+          $msix = Join-Path $output "L30JWTDesk_${version}_x64.msix"
+          & $makeAppx.FullName pack /d $stage /p $msix /o
+          if ($LASTEXITCODE -ne 0) { throw "MakeAppx failed with exit code $LASTEXITCODE." }
+
+          $zip = Join-Path $output "L30JWTDesk_${version}_x64.zip"
+          Compress-Archive -Path $msix -DestinationPath $zip
+          Move-Item $zip (Join-Path $output "L30JWTDesk_${version}_x64.msixupload")
+      - name: Upload Microsoft Store packages
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: l30-jwt-desk-microsoft-store
+          path: msix-output/*
+      - name: Attach Microsoft Store packages to release
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $version = (Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json).version
+          $tag = if ('${{ github.ref }}'.StartsWith('refs/tags/')) { '${{ github.ref_name }}' } else { "build-v$version" }
+          gh release upload $tag msix-output/* --clobber

@@ -19,6 +19,8 @@ import { SettingsWorkspace } from "./components/workspaces/SettingsWorkspace";
 import { VerifyWorkspace } from "./components/workspaces/VerifyWorkspace";
 import { useAppStore } from "./store";
 
+const microsoftStoreBuild = import.meta.env.VITE_MICROSOFT_STORE === "true";
+
 function App() {
   const {
     workspace,
@@ -60,6 +62,7 @@ function App() {
     return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => {
+    if (microsoftStoreBuild) return;
     let active = true;
     const timer = window.setTimeout(async () => {
       if (!active) return;
