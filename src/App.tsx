@@ -5,6 +5,7 @@ import { check } from "@tauri-apps/plugin-updater";
 import { InspectionWorkspace } from "./components/InspectionWorkspace";
 import {
   CommandPalette,
+  MobileNavigation,
   Sidebar,
   navItems,
   workspaceLabels,
@@ -210,6 +211,7 @@ function App() {
             Clear sensitive data
           </button>
         </footer>
+        <MobileNavigation />
         <CommandPalette
           open={paletteOpen}
           onClose={() => setPaletteOpen(false)}

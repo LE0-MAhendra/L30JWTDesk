@@ -14,6 +14,7 @@ import {
   Sun,
   TerminalSquare,
   Trash2,
+  X,
 } from "lucide-react";
 import { useAppStore } from "../store";
 import type { Workspace } from "../types";
@@ -86,6 +87,85 @@ export function Sidebar() {
         {navButton({ id: "about", label: "About", icon: Info })}
       </nav>
     </aside>
+  );
+}
+
+export function MobileNavigation() {
+  const [open, setOpen] = useState(false);
+  const { workspace, setWorkspace } = useAppStore();
+  const primaryItems = navItems.slice(0, 4);
+  const moreItems = [
+    ...navItems.slice(4),
+    { id: "settings" as Workspace, label: "Settings", icon: Settings },
+    { id: "about" as Workspace, label: "About", icon: Info },
+  ];
+  const select = (id: Workspace) => {
+    setWorkspace(id);
+    setOpen(false);
+  };
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, []);
+
+  return (
+    <>
+      <nav className="mobile-navigation" aria-label="Primary navigation">
+        {primaryItems.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            className={workspace === id ? "active" : ""}
+            aria-current={workspace === id ? "page" : undefined}
+            onClick={() => select(id)}
+          >
+            <Icon aria-hidden="true" />
+            <span>{label}</span>
+          </button>
+        ))}
+        <button
+          className={moreItems.some((item) => item.id === workspace) ? "active" : ""}
+          aria-expanded={open}
+          aria-controls="mobile-more-navigation"
+          onClick={() => setOpen(true)}
+        >
+          <Menu aria-hidden="true" />
+          <span>More</span>
+        </button>
+      </nav>
+      {open && (
+        <div className="mobile-menu-backdrop" onMouseDown={() => setOpen(false)}>
+          <section
+            id="mobile-more-navigation"
+            className="mobile-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-label="More workspaces"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="mobile-menu-heading">
+              <span>More workspaces</span>
+              <button aria-label="Close menu" onClick={() => setOpen(false)}>
+                <X aria-hidden="true" />
+              </button>
+            </div>
+            {moreItems.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                className={workspace === id ? "active" : ""}
+                aria-current={workspace === id ? "page" : undefined}
+                onClick={() => select(id)}
+              >
+                <Icon aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </section>
+        </div>
+      )}
+    </>
   );
 }
 
