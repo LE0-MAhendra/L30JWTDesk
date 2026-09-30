@@ -44,10 +44,13 @@ JWKS or OIDC verification.
 
 ## Install
 
+**Windows:** install L30JWTDesk from the
+[Microsoft Store](https://apps.microsoft.com/detail/9p4qhc0nsqhz?ocid=webpdpshare).
+
 Download the signed asset for your device from
 [GitHub Releases](https://github.com/LE0-MAhendra/L30JWTDesk/releases).
 
-- **Windows:** MSI or NSIS EXE.
+- **Windows (direct download):** MSI or NSIS EXE.
 - **Linux:** AppImage, DEB, or RPM.
 - **macOS:** DMG for Apple Silicon or Intel.
 - **Android:** install the signed ARM64 APK. Android may ask you to allow
